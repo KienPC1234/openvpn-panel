@@ -89,9 +89,24 @@ def init_firewall():
         logger.info(f"Adding Jump rule for {FIREWALL_CHAIN}")
         subprocess.run(["iptables", "-I", "FORWARD", "1", "-j", FIREWALL_CHAIN])
 
+def ensure_status_log_config():
+    """Ensure OpenVPN server.conf has status log enabled"""
+    if not SERVER_CONF_PATH.exists():
+        return
+    try:
+        content = SERVER_CONF_PATH.read_text()
+        if not re.search(r'^\s*status\s+', content, re.MULTILINE):
+            logger.info("Adding status log configuration to server.conf")
+            with open(SERVER_CONF_PATH, 'a') as f:
+                f.write("\nstatus /etc/openvpn/server/openvpn-status.log 10\n")
+            run_command(["systemctl", "restart", SERVICE_NAME])
+    except Exception as e:
+        logger.error(f"Error checking server.conf: {e}")
+
 @app.on_event("startup")
 def on_startup():
     init_firewall()
+    ensure_status_log_config()
 
 # --- HELPER FUNCTIONS ---
 
@@ -199,7 +214,8 @@ def client_exists(name: str) -> bool:
         return False
     try:
         content = index_path.read_text()
-        return re.search(rf"/CN={re.escape(name)}(\\b|/)", content) is not None
+        # Only match lines starting with 'V' (Valid) followed by tab, matching the CN
+        return re.search(rf"^V\t.*\/CN={re.escape(name)}(\b|/)", content, re.MULTILINE) is not None
     except:
         return False
 
@@ -228,35 +244,40 @@ def toggle_lock_client(client_name: str, action: str) -> tuple[bool, str]:
         return False, "IP not found (User has never connected?)"
 
     # --- CLEANUP (Unlock) ---
-    # 1. Remove Filter Rules (DNS Allow & Block) from custom chain
+    # 1. Remove Filter Rules (DNS & Portal Allow & Block) from custom chain
     delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
     delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
+    # Also remove allowance for Portal Port
+    delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "tcp", "--dport", str(PORTAL_PORT), "-d", VPN_GATEWAY, "-j", "ACCEPT"])
     delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-j", "DROP"])
     
     # 2. Remove NAT Redirect Rules (Captive Portal)
-    # Note: Using standard PREROUTING chain for NAT as custom chains in NAT are complex
     delete_rule_while_exists(["iptables", "-t", "nat", "-D", "PREROUTING", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
     delete_rule_while_exists(["iptables", "-t", "nat", "-D", "PREROUTING", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
 
     # --- APPLY LOCK ---
     if action == 'lock':
-        # 1. Allow DNS (Critical for clients to feel "connected" but blocked)
-        # Insert at top (1) so they are hit before the DROP
-        run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
-        run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
+        # 1. Allow DNS
+        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
+        if not ok: return False, err
+        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
+        if not ok: return False, err
         
-        # 2. Redirect Web Traffic (HTTP/HTTPS) to Portal
-        run_command(["iptables", "-t", "nat", "-I", "PREROUTING", "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
-        run_command(["iptables", "-t", "nat", "-I", "PREROUTING", "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
+        # 2. Allow Traffic to Portal (Critical Fix)
+        # Must allow access to the portal port on the gateway itself
+        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "tcp", "--dport", str(PORTAL_PORT), "-d", VPN_GATEWAY, "-j", "ACCEPT"])
+        if not ok: return False, err
+
+        # 3. Redirect Web Traffic (HTTP/HTTPS) to Portal
+        ok, err = run_command(["iptables", "-t", "nat", "-I", "PREROUTING", "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
+        if not ok: return False, err
+        ok, err = run_command(["iptables", "-t", "nat", "-I", "PREROUTING", "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
+        if not ok: return False, err
         
-        # 3. Block Everything Else
-        # Insert at position 3 (after the 2 DNS Accept rules we just added at pos 1)
-        # Or safer: just append to chain if we ensure chain starts empty? 
-        # But chain is shared. So we insert at pos 3.
-        # Since we inserted DNS at 1, then another DNS at 1 (shifting previous to 2)...
-        # The DNS rules are now at 1 and 2.
-        # So we insert DROP at 3.
-        run_command(["iptables", "-I", FIREWALL_CHAIN, "3", "-s", ip, "-j", "DROP"])
+        # 4. Block Everything Else
+        # Insert at position 4 (after the 3 Accept rules we just added at pos 1)
+        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "4", "-s", ip, "-j", "DROP"])
+        if not ok: return False, err
 
     # Save
     if subprocess.run(["which", "netfilter-persistent"], capture_output=True).returncode == 0:
@@ -338,50 +359,41 @@ def get_active_connections() -> List[Dict]:
         return []
 
     try:
-        lines = status_path.read_text(encoding="utf-8", errors="ignore").splitlines()
-        parsing = False
+        content = status_path.read_text(encoding="utf-8", errors="ignore")
+        lines = content.splitlines()
 
         for line in lines:
-            line = line.strip()
+            parts = line.split(',')
+            # Format: CLIENT_LIST,Common Name,Real Address,Virtual Address,Virtual IPv6 Address,Bytes Received,Bytes Sent,Connected Since,...
+            if parts[0] == "CLIENT_LIST":
+                if len(parts) < 8:
+                    continue
+                
+                name = parts[1]
+                if name == "Common Name": continue
+                
+                real_addr = parts[2].rsplit(':', 1)[0]
+                virt_addr = parts[3]
+                
+                try:
+                    rx = int(parts[5])
+                    tx = int(parts[6])
+                except (ValueError, IndexError):
+                    rx, tx = 0, 0
+                
+                connected_since = parts[7]
 
-            if line.startswith("Common Name,Real Address"):
-                parsing = True
-                continue
+                connections.append({
+                    "name": name,
+                    "real_address": real_addr,
+                    "virtual_address": virt_addr,
+                    "bytes_received": format_bytes(rx),
+                    "bytes_sent": format_bytes(tx),
+                    "connected_since": connected_since,
+                })
 
-            if line.startswith(("ROUTING TABLE", "GLOBAL STATS")):
-                break
-
-            if not parsing or "," not in line:
-                continue
-
-            parts = line.split(",")
-            if len(parts) < 5:
-                continue
-
-            name = parts[0].strip()
-            if name in ("Common Name", "UNDEF", ""):
-                continue
-
-            real_addr = parts[1].rsplit(":", 1)[0]  
-
-            try:
-                rx = int(parts[2])
-                tx = int(parts[3])
-            except ValueError:
-                continue
-
-            connected_since = ",".join(parts[4:]).strip()
-
-            connections.append({
-                "name": name,
-                "real_address": real_addr,
-                "bytes_received": format_bytes(rx),
-                "bytes_sent": format_bytes(tx),
-                "connected_since": connected_since,
-            })
-
-    except Exception:
-        logger.exception("Error parsing status log")
+    except Exception as e:
+        logger.error(f"Error parsing status log: {e}")
 
     return connections
 
@@ -427,7 +439,7 @@ async def login(password: str = Form(...)):
         session_storage[token] = time.time() + 86400
         
         response = RedirectResponse(url="/dashboard", status_code=303)
-        response.set_cookie(key="session_token", value=token, httponly=True, max_age=86400, samesite="lax", secure=False)
+        response.set_cookie(key="session_token", value=token, max_age=86400, samesite="lax")
         return response
     return RedirectResponse(url="/?error=Invalid Password", status_code=303)
 
@@ -503,6 +515,28 @@ async def websocket_logs(websocket: WebSocket):
             try: process.terminate()
             except: pass
 
+@app.websocket("/ws/stats")
+async def websocket_stats(websocket: WebSocket):
+    token = websocket.cookies.get("session_token")
+    if not token or token not in session_storage or session_storage[token] < time.time():
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    await websocket.accept()
+    try:
+        while True:
+            stats = {
+                "service_status": get_service_status(),
+                "active_conns": get_active_connections(),
+                "network_stats": get_network_interfaces()
+            }
+            await websocket.send_json(stats)
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+
 # --- OTHER API ROUTES ---
 
 @app.post("/api/service/restart")
@@ -537,16 +571,25 @@ def add_client(client_name: str = Form(...), user: str = Depends(verify_admin)):
     if client_exists(safe_name):
         raise HTTPException(400, "Client already exists!")
 
-    cmd = ["./easyrsa", "--batch", "build-client-full", safe_name, "nopass"]
-    success, err = run_command(cmd, cwd=EASY_RSA_DIR)
-    
-    if not success: 
-        raise HTTPException(500, f"Error creating client: {err}")
-    
-    if not create_ovpn_file(safe_name):
-        run_command(["./easyrsa", "--batch", "revoke", safe_name], cwd=EASY_RSA_DIR)
-        run_command(["./easyrsa", "--batch", "gen-crl"], cwd=EASY_RSA_DIR)
-        raise HTTPException(500, "Failed to create config file. Rolled back changes.")
+    try:
+        cmd = ["./easyrsa", "--batch", "build-client-full", safe_name, "nopass"]
+        success, err = run_command(cmd, cwd=EASY_RSA_DIR)
+        
+        if not success: 
+            raise HTTPException(500, f"Error creating client: {err}")
+        
+        if not create_ovpn_file(safe_name):
+            raise HTTPException(500, "Failed to create config file.")
+
+    except Exception as e:
+        # Cleanup if partial failure
+        if client_exists(safe_name):
+             run_command(["./easyrsa", "--batch", "revoke", safe_name], cwd=EASY_RSA_DIR)
+             run_command(["./easyrsa", "--batch", "gen-crl"], cwd=EASY_RSA_DIR)
+        
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(500, detail=str(e))
 
     return RedirectResponse(url="/dashboard", status_code=303)
 
@@ -573,12 +616,14 @@ def delete_client(client_name: str = Form(...), user: str = Depends(verify_admin
             logger.warning(f"Could not chown crl.pem: {e}")
         crl_dest.chmod(0o644)
     
-    # 3. Remove client keys/reqs (Logic from openvpn-install.sh)
+    # 3. Remove client keys/reqs/crt (Logic from openvpn-install.sh + Cleanup)
     req_file = EASY_RSA_DIR / "pki/reqs" / f"{client_name}.req"
     key_file = EASY_RSA_DIR / "pki/private" / f"{client_name}.key"
+    crt_file = EASY_RSA_DIR / "pki/issued" / f"{client_name}.crt"
     
     if req_file.exists(): req_file.unlink()
     if key_file.exists(): key_file.unlink()
+    if crt_file.exists(): crt_file.unlink()
 
     # 4. Remove OVPN file
     ovpn_path = OVPN_OUT_DIR / f"{client_name}.ovpn"

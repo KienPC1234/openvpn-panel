@@ -6,7 +6,7 @@ secret_key = doi_chuoi_nay_thanh_cai_gi_do_bao_mat_hon
 
 [Paths]
 # Đường dẫn tới thư mục chứa file .ovpn user sau khi tạo
-ovpn_out_dir = /root/ovpn_files
+ovpn_out_dir = ovpn
 # Đường dẫn cài đặt EasyRSA (mặc định theo script của bạn)
 easy_rsa_dir = /etc/openvpn/server/easy-rsa
 # File chứa template config client

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <div class="flex h-screen bg-gray-100 font-sans">
     
@@ -71,15 +72,24 @@
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
             
             {% if msg %}
-            <div id="alert-box" class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded shadow-sm flex justify-between items-center">
-                <div>
-                    <p class="font-bold">Notification</p>
-                    <p>{{ msg }}</p>
-                </div>
-                <button onclick="document.getElementById('alert-box').style.display='none'" class="text-blue-500 hover:text-blue-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Notification',
+                        text: '{{ msg }}',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer)
+                            toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        }
+                    });
+                });
+            </script>
             {% endif %}
 
             <!-- SECTION: DASHBOARD (Overview) -->
@@ -141,6 +151,7 @@
                                 <tr>
                                     <th class="p-3">User</th>
                                     <th class="p-3">Real IP</th>
+                                    <th class="p-3">Virtual IP</th>
                                     <th class="p-3">Data (RX/TX)</th>
                                     <th class="p-3">Connected Since</th>
                                 </tr>
@@ -151,6 +162,7 @@
                                     <tr>
                                         <td class="p-3 font-bold text-green-700">{{ conn.name }}</td>
                                         <td class="p-3 font-mono">{{ conn.real_address }}</td>
+                                        <td class="p-3 font-mono text-blue-600">{{ conn.virtual_address }}</td>
                                         <td class="p-3">
                                             <span class="text-green-600"><i class="fas fa-arrow-down"></i> {{ conn.bytes_received }}</span>
                                             <span class="text-gray-400 mx-1">|</span>
@@ -160,7 +172,7 @@
                                     </tr>
                                     {% endfor %}
                                 {% else %}
-                                    <tr><td colspan="4" class="p-4 text-center text-gray-400 italic">No active connections.</td></tr>
+                                    <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">No active connections.</td></tr>
                                 {% endif %}
                             </tbody>
                         </table>
@@ -183,7 +195,7 @@
                             </div>
 
                              <!-- Add User Form -->
-                             <form action="/api/client/add" method="post" class="flex">
+                             <form id="addUserForm" onsubmit="handleAddUser(event)" class="flex">
                                 <input type="text" name="client_name" required placeholder="New username..." class="border border-gray-300 rounded-l px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r text-sm font-bold shadow">
                                     <i class="fas fa-plus mr-1"></i>
@@ -358,6 +370,54 @@
 </div>
 
 <script>
+    async function handleAddUser(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const btn = form.querySelector('button');
+        const origContent = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        try {
+            const res = await fetch('/api/client/add', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                // Success
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Created!',
+                    text: 'Client added successfully.',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                // Error (e.g. 400 Client exists)
+                const data = await res.json();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.detail || 'Failed to add client.'
+                });
+            }
+        } catch (e) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Network Error',
+                text: 'Could not connect to server.'
+            });
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origContent;
+        }
+    }
+
     // --- SEARCH FUNCTION ---
     function filterUsers() {
         const input = document.getElementById('userSearchInput');
@@ -377,7 +437,8 @@
 
     // --- CHART & AUTO REFRESH ---
     let chartInstance = null;
-    let prevStats = {}; // To calculate rate if using raw bytes (optional, but raw is better for charts)
+    let prevStats = {}; 
+    let statsWs = null;
 
     function initChart() {
         const ctx = document.getElementById('trafficChart').getContext('2d');
@@ -409,7 +470,7 @@
                 maintainAspectRatio: false,
                 animation: false,
                 scales: {
-                    x: { display: false }, // Hide timestamps for clean look
+                    x: { display: false }, 
                     y: { beginAtZero: true }
                 },
                 plugins: {
@@ -420,18 +481,20 @@
         });
     }
 
-    async function fetchStats() {
-        if (document.getElementById('section-dashboard').classList.contains('hidden')) return;
+    function connectStatsWs() {
+        if (statsWs && statsWs.readyState === WebSocket.OPEN) return;
 
-        try {
-            const res = await fetch('/api/stats');
-            if (res.ok) {
-                const data = await res.json();
-                updateDashboard(data);
-            }
-        } catch (e) {
-            console.error("Failed to fetch stats");
-        }
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        statsWs = new WebSocket(`${protocol}//${window.location.host}/ws/stats`);
+
+        statsWs.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            updateDashboard(data);
+        };
+
+        statsWs.onclose = () => {
+            setTimeout(connectStatsWs, 2000);
+        };
     }
 
     function updateDashboard(data) {
@@ -499,6 +562,7 @@
                 <tr>
                     <td class="p-3 font-bold text-green-700">${conn.name}</td>
                     <td class="p-3 font-mono">${conn.real_address}</td>
+                    <td class="p-3 font-mono text-blue-600">${conn.virtual_address || '-'}</td>
                     <td class="p-3">
                         <span class="text-green-600"><i class="fas fa-arrow-down"></i> ${conn.bytes_received}</span>
                         <span class="text-gray-400 mx-1">|</span>
@@ -508,14 +572,13 @@
                 </tr>
             `).join('');
         } else {
-            connTable.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400 italic">No active connections.</td></tr>`;
+            connTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400 italic">No active connections.</td></tr>`;
         }
     }
 
     // Init
     initChart();
-    // Start Polling (2 seconds)
-    setInterval(fetchStats, 2000);
+    connectStatsWs();
 
     // --- NAVIGATION ---
     function switchSection(target) {
@@ -550,7 +613,6 @@
         const urlParams = new URLSearchParams(window.location.search);
         const section = urlParams.get('section') || localStorage.getItem('activeSection') || 'dashboard';
         switchSection(section);
-        fetchStats();
     });
 
     // --- WEBSOCKET LOGS ---

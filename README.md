@@ -1,115 +1,124 @@
 # OpenVPN Web Manager
 
-Một bộ công cụ quản lý OpenVPN Server đơn giản và mạnh mẽ, bao gồm script cài đặt tự động (fork từ Nyr) và giao diện Web Dashboard hiện đại để quản lý người dùng, cấu hình và dịch vụ.
+A robust and simple toolset for managing OpenVPN Servers. It includes an automated installation script (forked from Nyr) and a modern Web Dashboard for managing users, configurations, and system services.
 
-## Tính năng
+## Key Features
 
-*   **Tự động cài đặt OpenVPN**: Script Bash giúp cài đặt OpenVPN Server chỉ trong vài phút.
-*   **Web Dashboard**: Giao diện trực quan để quản lý.
-*   **Quản lý User**: Thêm, xóa, khóa/mở khóa, tạo mã OTP tải file cấu hình.
-*   **Quản lý Hệ thống**: Xem trạng thái service, restart service, xem log OpenVPN, xem thông tin card mạng.
-*   **Chỉnh sửa Cấu hình**: Sửa file `server.conf` và template client trực tiếp trên web.
+*   **Automated OpenVPN Installation**: Bash script to set up a fully functional OpenVPN Server in minutes.
+*   **Web Dashboard**: Intuitive and responsive interface for easy management.
+*   **User Management**: Add, delete, lock/unlock users, and generate OTPs for secure configuration downloads.
+*   **Real-time Monitoring**: View active connections, bandwidth usage, and system logs in real-time via WebSockets.
+*   **System Management**: Check service status, restart OpenVPN service, view logs, and monitor network interfaces.
+*   **Configuration Editor**: Edit `server.conf` and client templates directly from the web interface.
 
 ---
 
-## 1. Cài đặt OpenVPN Server
+## Prerequisites
 
-Sử dụng script `openvpn-install.sh` có sẵn trong thư mục để cài đặt OpenVPN.
+*   **Operating System**: Linux (Ubuntu, Debian, CentOS, Fedora, etc.)
+*   **Python**: Version 3.10 or higher
+*   **Permissions**: Root privileges (`sudo`) are required for both installation and running the web panel.
+
+---
+
+## 1. Install OpenVPN Server
+
+Use the included `openvpn-install.sh` script to install and configure OpenVPN.
 
 ```bash
-# Cấp quyền thực thi
+# Grant execution permissions
 chmod +x openvpn-install.sh
 
-# Chạy script cài đặt (yêu cầu quyền root)
+# Run the installer (requires root)
 sudo ./openvpn-install.sh
 ```
 
-Làm theo các hướng dẫn trên màn hình (chọn protocol, port, DNS...). Sau khi cài đặt xong, file cấu hình user đầu tiên sẽ được tạo.
+Follow the on-screen instructions to select your protocol (UDP/TCP), port, and DNS settings. Once completed, the first client configuration file will be generated.
 
-**Lưu ý:** Script này cũng cài đặt `easy-rsa` tại `/etc/openvpn/server/easy-rsa`. Web panel sẽ sử dụng đường dẫn này để quản lý chứng chỉ.
+**Note:** This script installs `easy-rsa` at `/etc/openvpn/server/easy-rsa`. The web panel relies on this path to manage certificates.
 
 ---
 
-## 2. Cài đặt Web Panel
+## 2. Install Web Panel Environment
 
-### Yêu cầu
-*   Python 3.10+
-*   Pip hoặc Conda
+You can set up the Python environment using either `pip` or `conda`.
 
-### Cài đặt thư viện
-Bạn có thể cài đặt môi trường thông qua `conda` hoặc `pip`.
-
-**Cách 1: Dùng Pip (Khuyên dùng)**
+### Option 1: Using Pip (Recommended)
 ```bash
-# Cài đặt các thư viện cần thiết
+# Install required Python packages
 pip install fastapi uvicorn[standard] jinja2 python-multipart ujson requests aiofiles
 ```
 
-**Cách 2: Dùng Conda**
+### Option 2: Using Conda
 ```bash
+# Create and activate environment from file
 conda env create -f environment.yml
 conda activate vpn_panel
 ```
 
 ---
 
-## 3. Cấu hình Web Panel
+## 3. Configuration
 
-1.  Copy file cấu hình mẫu:
+1.  **Create the configuration file**:
+    Copy the example config file to `config.ini`:
     ```bash
     cp config.ini.example config.ini
     ```
 
-2.  Chỉnh sửa `config.ini`:
+2.  **Edit `config.ini`**:
+    Update the file with your specific settings:
+
     ```ini
     [Security]
-    # Đổi mật khẩu admin quản trị web
+    # Admin password for the web dashboard login
     admin_password = your_secure_password
-    # Chuỗi bí mật cho session cookie (đổi chuỗi ngẫu nhiên dài)
+    # Secret key for session cookies (generate a long random string)
     secret_key = change_this_to_a_random_secret_string
 
     [Paths]
-    # Đường dẫn output file .ovpn (thường để trong folder web để tải hoặc gửi đi)
+    # Output directory for generated .ovpn files
     ovpn_out_dir = ovpn/
     
-    # Đường dẫn EasyRSA (Mặc định do script cài đặt tạo ra)
+    # Path to EasyRSA (Default from the install script)
     easy_rsa_dir = /etc/openvpn/server/easy-rsa
     
-    # File cấu hình chung cho client (quan trọng)
+    # Client template file (appended to client configs)
     client_common = /etc/openvpn/server/client-common.txt
     
-    # File theo dõi IP tĩnh của OpenVPN
+    # OpenVPN static IP persistence file
     ipp_file = /etc/openvpn/server/ipp.txt
 
     [Network]
-    # IP hoặc Domain của VPN Server (dùng cho tính năng khóa User)
+    # VPN Server IP or Domain (used for user locking features)
     vpn_gateway = 10.8.0.1
-    # Port web portal (nếu dùng tính năng captive portal)
+    # Web portal port (if using captive portal features)
     portal_port = 8000
-    # Link hỗ trợ (hiển thị khi user gặp lỗi)
+    # Support link (displayed to users when locked/error)
     mess_link = https://m.me/your_support
     ```
 
 ---
 
-## 4. Chạy Web Panel với Supervisor
+## 4. Deploy with Supervisor (Production)
 
-Để Web Panel chạy ngầm bền bỉ và tự khởi động lại khi gặp lỗi, chúng ta sử dụng `supervisor`.
+To ensure the Web Panel runs continuously and restarts automatically on failure, use `supervisor`.
 
-### Bước 4.1: Cài đặt Supervisor
+### 4.1. Install Supervisor
+
 ```bash
 # Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install supervisor -y
+sudo apt-get update && sudo apt-get install supervisor -y
 
 # CentOS/RHEL
 sudo yum install supervisor -y
 ```
 
-### Bước 4.2: Tạo file cấu hình
-Tạo file `/etc/supervisor/conf.d/vpn_panel.conf` (Ubuntu) hoặc `/etc/supervisord.d/vpn_panel.ini` (CentOS) với nội dung sau:
+### 4.2. Create Configuration File
 
-**Lưu ý:** Thay đổi `/path/to/your/project` thành đường dẫn thực tế chứa code (ví dụ: `/data/openvpn`).
+Create a config file at `/etc/supervisor/conf.d/vpn_panel.conf` (Ubuntu/Debian) or `/etc/supervisord.d/vpn_panel.ini` (CentOS).
+
+**Important:** Replace `/data/openvpn` with the actual path to your project.
 
 ```ini
 [program:vpn_panel]
@@ -123,47 +132,48 @@ stdout_logfile=/var/log/vpn_panel.out.log
 environment=LANG=en_US.UTF-8,LC_ALL=en_US.UTF-8
 ```
 
-*Nếu bạn dùng môi trường ảo (venv/conda), hãy thay `/usr/bin/python3` bằng đường dẫn python trong môi trường ảo đó.*
+*Note: If using a virtual environment (venv/conda), replace `/usr/bin/python3` with the full path to the python executable inside your environment.*
 
-### Bước 4.3: Khởi động service
+### 4.3. Start the Service
 
 ```bash
-# Cập nhật cấu hình mới
+# Reload supervisor configuration
 sudo supervisorctl reread
 sudo supervisorctl update
 
-# Khởi động Web Panel
+# Start the VPN Panel
 sudo supervisorctl start vpn_panel
 
-# Kiểm tra trạng thái
+# Check status
 sudo supervisorctl status
 ```
 
 ---
 
-## 5. Sử dụng
+## 5. Usage Guide
 
-1.  Truy cập trình duyệt: `http://<IP_SERVER>:8000`
-2.  Đăng nhập bằng mật khẩu đã đặt trong `config.ini`.
-3.  **Dashboard**:
-    *   **Users**: Thêm user mới, lấy mã OTP tải file, khóa/mở khóa user.
-    *   **Settings**: Chỉnh sửa cấu hình Server và Client.
-    *   **Logs**: Xem log hệ thống để debug.
+1.  **Access**: Open your browser and navigate to `http://<YOUR_SERVER_IP>:8000`.
+2.  **Login**: Use the password defined in `config.ini`.
+3.  **Dashboard Sections**:
+    *   **Dashboard**: Overview of total users, active connections, and network traffic graph.
+    *   **User Management**: Add new users, download configurations via OTP, and lock/unlock access.
+    *   **Settings**: Edit `server.conf` and client templates.
+    *   **Logs**: View real-time system logs for debugging.
 
-### Lưu ý quan trọng
-*   Ứng dụng chạy với quyền **ROOT** (user=root trong supervisor) vì cần quyền truy cập `/etc/openvpn`, chạy lệnh `iptables` và `systemctl`. Hãy bảo vệ port 8000 cẩn thận (dùng Firewall hoặc VPN để truy cập).
-*   Chức năng **Restart Service** trên Web yêu cầu systemd, hoạt động tốt nhất trên Linux server tiêu chuẩn.
+### Security Note
+The application must run as **ROOT** (`user=root` in supervisor) to manage OpenVPN files (`/etc/openvpn`), execute `iptables` rules, and control system services via `systemctl`. 
+**Security Warning:** It is highly recommended to restrict access to port 8000 using a Firewall (UFW/IPTables) or allow access only via a VPN connection.
 
 ---
 
-## Cấu trúc thư mục
+## Directory Structure
 
 ```
 /data/openvpn/
-├── main.py              # Mã nguồn chính (FastAPI)
-├── openvpn-install.sh   # Script cài đặt OpenVPN (Bash)
-├── config.ini           # File cấu hình (Tự tạo từ .example)
-├── templates/           # Giao diện HTML (Jinja2)
-├── static/              # File tĩnh (CSS, JS, Installer MSI)
-└── ovpn/                # Thư mục chứa file .ovpn đã tạo
+├── main.py              # Main Application (FastAPI)
+├── openvpn-install.sh   # OpenVPN Installer Script (Bash)
+├── config.ini           # Configuration File
+├── templates/           # HTML Templates (Jinja2)
+├── static/              # Static Assets (CSS, JS, MSI Installer)
+└── ovpn/                # Directory for generated .ovpn files
 ```
