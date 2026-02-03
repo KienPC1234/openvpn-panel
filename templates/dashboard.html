@@ -1,0 +1,635 @@
+{% extends "base.html" %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="flex h-screen bg-gray-100 font-sans">
+    
+    <!-- SIDEBAR -->
+    <div class="w-64 bg-gray-800 text-gray-100 flex flex-col shadow-lg transition-all duration-300" id="sidebar">
+        <div class="p-6 border-b border-gray-700 flex items-center justify-between">
+            <span class="text-xl font-bold tracking-wider">VPN Panel</span>
+            <i class="fas fa-shield-alt text-blue-400"></i>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="switchSection('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center p-3 rounded hover:bg-gray-700 transition duration-200">
+                <i class="fas fa-tachometer-alt w-6"></i>
+                <span>Dashboard</span>
+            </button>
+            <button onclick="switchSection('users')" id="nav-users" class="nav-item w-full flex items-center p-3 rounded hover:bg-gray-700 transition duration-200">
+                <i class="fas fa-users w-6"></i>
+                <span>User Management</span>
+            </button>
+            <button onclick="switchSection('settings')" id="nav-settings" class="nav-item w-full flex items-center p-3 rounded hover:bg-gray-700 transition duration-200">
+                <i class="fas fa-cogs w-6"></i>
+                <span>Settings</span>
+            </button>
+            <button onclick="switchSection('logs')" id="nav-logs" class="nav-item w-full flex items-center p-3 rounded hover:bg-gray-700 transition duration-200">
+                <i class="fas fa-terminal w-6"></i>
+                <span>Realtime Logs</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+            <a href="/logout" class="flex items-center p-3 text-red-400 hover:bg-gray-700 rounded transition duration-200">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        
+        <!-- HEADER -->
+        <header class="bg-white shadow-sm z-10 p-4 flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-gray-800" id="page-title">Dashboard</h2>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Service:</span>
+                    <span id="header-service-status">
+                    {% if service_status == 'active' %}
+                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold flex items-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Running
+                        </span>
+                    {% else %}
+                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center">
+                            <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span> {{ service_status }}
+                        </span>
+                    {% endif %}
+                    </span>
+                </div>
+                <form action="/api/service/restart" method="post" onsubmit="return confirm('Restart VPN Service? Connections will be dropped.');">
+                    <button type="submit" class="text-gray-600 hover:text-blue-600 transition" title="Restart Service">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <!-- CONTENT SCROLLABLE -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            
+            {% if msg %}
+            <div id="alert-box" class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded shadow-sm flex justify-between items-center">
+                <div>
+                    <p class="font-bold">Notification</p>
+                    <p>{{ msg }}</p>
+                </div>
+                <button onclick="document.getElementById('alert-box').style.display='none'" class="text-blue-500 hover:text-blue-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% endif %}
+
+            <!-- SECTION: DASHBOARD (Overview) -->
+            <div id="section-dashboard" class="content-section space-y-6">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Total Users -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase font-semibold">Total Users</p>
+                                <p class="text-3xl font-bold text-gray-800 mt-1">{{ clients|length }}</p>
+                            </div>
+                            <div class="p-3 bg-blue-50 rounded-full text-blue-500">
+                                <i class="fas fa-users text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Connections -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase font-semibold">Active Users</p>
+                                <p class="text-3xl font-bold text-gray-800 mt-1" id="dash-active-count">{{ active_conns|length }}</p>
+                            </div>
+                            <div class="p-3 bg-green-50 rounded-full text-green-500">
+                                <i class="fas fa-plug text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Interfaces Chart -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Network Traffic (Primary & VPN)</h3>
+                    <div class="h-64 relative">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                    <!-- RX/TX RATE DISPLAY -->
+                    <div class="flex justify-center space-x-8 mt-4 text-sm font-mono text-gray-600 bg-gray-50 p-2 rounded">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                            <span>RX: <span id="traffic-rx" class="font-bold">0.00 KB/s</span></span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                            <span>TX: <span id="traffic-tx" class="font-bold">0.00 KB/s</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Active Connections List -->
+                 <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Current Connections</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
+                                <tr>
+                                    <th class="p-3">User</th>
+                                    <th class="p-3">Real IP</th>
+                                    <th class="p-3">Data (RX/TX)</th>
+                                    <th class="p-3">Connected Since</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-gray-100" id="active-conns-table">
+                                {% if active_conns %}
+                                    {% for conn in active_conns %}
+                                    <tr>
+                                        <td class="p-3 font-bold text-green-700">{{ conn.name }}</td>
+                                        <td class="p-3 font-mono">{{ conn.real_address }}</td>
+                                        <td class="p-3">
+                                            <span class="text-green-600"><i class="fas fa-arrow-down"></i> {{ conn.bytes_received }}</span>
+                                            <span class="text-gray-400 mx-1">|</span>
+                                            <span class="text-blue-600"><i class="fas fa-arrow-up"></i> {{ conn.bytes_sent }}</span>
+                                        </td>
+                                        <td class="p-3 text-gray-500">{{ conn.connected_since }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="4" class="p-4 text-center text-gray-400 italic">No active connections.</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: USERS (Management) -->
+            <div id="section-users" class="content-section hidden space-y-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+                        <h3 class="text-lg font-bold text-gray-800">User List</h3>
+                        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
+                            <!-- Search Box -->
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">
+                                    <i class="fas fa-search text-xs"></i>
+                                </span>
+                                <input type="text" id="userSearchInput" onkeyup="filterUsers()" placeholder="Search users..." class="pl-8 pr-3 py-2 border border-gray-300 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64">
+                            </div>
+
+                             <!-- Add User Form -->
+                             <form action="/api/client/add" method="post" class="flex">
+                                <input type="text" name="client_name" required placeholder="New username..." class="border border-gray-300 rounded-l px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r text-sm font-bold shadow">
+                                    <i class="fas fa-plus mr-1"></i>
+                                </button>
+                            </form>
+                            <a href="/api/sync" class="bg-gray-100 text-gray-600 px-3 py-2 rounded hover:bg-gray-200 text-sm flex items-center justify-center" title="Sync Files">
+                                <i class="fas fa-sync"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse" id="usersTable">
+                            <thead>
+                                <tr class="bg-gray-100 border-b text-sm text-gray-600 uppercase">
+                                    <th class="p-3">Name</th>
+                                    <th class="p-3">Config Status</th>
+                                    <th class="p-3 text-center">Access Control</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-gray-100">
+                                {% for client in clients %}
+                                <tr class="hover:bg-gray-50 transition user-row">
+                                    <td class="p-3 font-bold text-gray-700 user-name">{{ client.name }}</td>
+                                    <td class="p-3">
+                                        {% if client.has_file %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Active
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                Error
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-3 text-center">
+                                        <!-- Toggle Switch for Lock -->
+                                        <form action="/api/client/lock" method="post" class="inline-block">
+                                            <input type="hidden" name="client_name" value="{{client.name}}">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                {% if client.locked %}
+                                                    <input type="hidden" name="action" value="unlock">
+                                                    <input type="checkbox" class="sr-only peer" onchange="this.form.submit()">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                                    <span class="ml-3 text-sm font-medium text-red-600"><i class="fas fa-lock"></i> Locked</span>
+                                                {% else %}
+                                                    <input type="hidden" name="action" value="lock">
+                                                    <input type="checkbox" checked class="sr-only peer" onchange="this.form.submit()">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                                    <span class="ml-3 text-sm font-medium text-green-600">Allowed</span>
+                                                {% endif %}
+                                            </label>
+                                        </form>
+                                    </td>
+                                    <td class="p-3 flex justify-end items-center space-x-3">
+                                        <button onclick="generateOtp('{{client.name}}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded transition" title="Get OTP">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        <button onclick="openDeleteModal('{{client.name}}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded transition" title="Delete User">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: SETTINGS -->
+            <div id="section-settings" class="content-section hidden space-y-6">
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Client Common -->
+                    <div class="bg-white rounded-lg shadow-sm p-6 flex flex-col h-full">
+                        <h3 class="font-bold text-lg mb-2 flex items-center text-gray-800">
+                            <i class="fas fa-file-code mr-2 text-blue-500"></i> Client Template (client-common.txt)
+                        </h3>
+                        <p class="text-xs text-gray-500 mb-4">Configuration appended to every .ovpn file.</p>
+                        <form action="/api/common/edit" method="post" class="flex-1 flex flex-col">
+                            <textarea name="content" class="flex-1 w-full p-3 border rounded font-mono text-xs bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none min-h-[400px]" spellcheck="false">{{ common_content }}</textarea>
+                            <div class="mt-4 text-right">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">
+                                    <i class="fas fa-save mr-1"></i> Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Server Config -->
+                    <div class="bg-white rounded-lg shadow-sm p-6 flex flex-col h-full">
+                        <h3 class="font-bold text-lg mb-2 flex items-center text-gray-800">
+                            <i class="fas fa-server mr-2 text-green-500"></i> Server Config (server.conf)
+                        </h3>
+                        <p class="text-xs text-gray-500 mb-4">Caution: Incorrect config will crash the VPN.</p>
+                        <form action="/api/config/server" method="post" class="flex-1 flex flex-col">
+                            <textarea name="content" class="flex-1 w-full p-3 border rounded font-mono text-xs bg-gray-900 text-green-400 focus:ring-2 focus:ring-green-500 outline-none resize-none min-h-[400px]" spellcheck="false">{{ server_content }}</textarea>
+                            <div class="mt-4 text-right">
+                                <button type="submit" onclick="return confirm('Are you sure?');" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded shadow transition">
+                                    <i class="fas fa-save mr-1"></i> Save & Apply
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: LOGS (REALTIME) -->
+            <div id="section-logs" class="content-section hidden space-y-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <h3 class="font-bold text-lg text-gray-800 mr-3">Realtime System Logs</h3>
+                            <span id="ws-status" class="px-2 py-0.5 rounded text-xs font-bold bg-gray-200 text-gray-500">Disconnected</span>
+                        </div>
+                        <div class="space-x-2">
+                             <button onclick="clearLogs()" class="text-gray-500 hover:text-gray-700 text-sm border px-2 py-1 rounded">
+                                <i class="fas fa-eraser"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-black text-green-400 p-4 rounded shadow-inner font-mono text-xs h-[500px] overflow-y-auto whitespace-pre-wrap flex flex-col-reverse" id="terminal-logs">
+                        <!-- Logs will appear here -->
+                        <div class="text-gray-600 italic border-t border-gray-800 pt-2 mt-2">-- End of stream --</div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- MODALS -->
+<!-- OTP Modal -->
+<div id="otpModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center transform transition-all scale-100">
+        <h3 class="text-lg font-bold mb-2 text-gray-800">Download OTP</h3>
+        <div id="otpDisplay" class="text-5xl font-mono font-bold text-blue-600 tracking-widest my-6"></div>
+        <p class="text-sm text-gray-500 mb-6">Code expires in 60 seconds.</p>
+        <button onclick="document.getElementById('otpModal').classList.add('hidden')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-8 rounded shadow-sm">Close</button>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md border-t-4 border-red-500">
+        <div class="text-center mb-6">
+            <i class="fas fa-exclamation-circle text-5xl text-red-500 mb-3"></i>
+            <h3 class="text-xl font-bold text-gray-800">Confirm Deletion</h3>
+            <p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Type <span class="font-mono font-bold text-red-600 bg-red-50 px-1 rounded" id="targetNameDisplay"></span> to confirm:
+            </label>
+            <input type="text" id="confirmInput" class="w-full border p-2 rounded focus:ring-2 focus:ring-red-500 outline-none" placeholder="Username..." onkeyup="checkDeleteInput()">
+        </div>
+
+        <form id="deleteForm" action="/api/client/delete" method="post">
+            <input type="hidden" name="client_name" id="deleteClientName">
+            <div class="flex justify-between space-x-3">
+                <button type="button" onclick="closeDeleteModal()" class="w-1/2 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300 font-medium">Cancel</button>
+                <button type="submit" id="deleteBtn" disabled class="w-1/2 bg-red-600 text-white py-2 rounded hover:bg-red-700 font-bold opacity-50 cursor-not-allowed transition shadow">
+                    Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // --- SEARCH FUNCTION ---
+    function filterUsers() {
+        const input = document.getElementById('userSearchInput');
+        const filter = input.value.toLowerCase();
+        const rows = document.querySelectorAll('.user-row');
+
+        rows.forEach(row => {
+            const nameCell = row.querySelector('.user-name');
+            const name = nameCell.textContent || nameCell.innerText;
+            if (name.toLowerCase().indexOf(filter) > -1) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+
+    // --- CHART & AUTO REFRESH ---
+    let chartInstance = null;
+    let prevStats = {}; // To calculate rate if using raw bytes (optional, but raw is better for charts)
+
+    function initChart() {
+        const ctx = document.getElementById('trafficChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'RX (Download)',
+                        borderColor: 'rgb(34, 197, 94)', // green-500
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        data: [],
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'TX (Upload)',
+                        borderColor: 'rgb(59, 130, 246)', // blue-500
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        data: [],
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: { display: false }, // Hide timestamps for clean look
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { mode: 'index', intersect: false }
+                }
+            }
+        });
+    }
+
+    async function fetchStats() {
+        if (document.getElementById('section-dashboard').classList.contains('hidden')) return;
+
+        try {
+            const res = await fetch('/api/stats');
+            if (res.ok) {
+                const data = await res.json();
+                updateDashboard(data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch stats");
+        }
+    }
+
+    function updateDashboard(data) {
+        // 1. Service Status
+        const statusContainer = document.getElementById('header-service-status');
+        if (data.service_status === 'active') {
+            statusContainer.innerHTML = `
+                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold flex items-center">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Running
+                </span>`;
+        } else {
+            statusContainer.innerHTML = `
+                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center">
+                    <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span> ${data.service_status}
+                </span>`;
+        }
+
+        // 2. Counts
+        document.getElementById('dash-active-count').innerText = data.active_conns.length;
+
+        // 3. Update Chart (Primary Interface - usually first one)
+        if (data.network_stats.length > 0 && chartInstance) {
+            // Find eth0 or take the first one
+            const iface = data.network_stats.find(n => n.name === 'eth0') || data.network_stats[0];
+            
+            const now = new Date().toLocaleTimeString();
+            
+            let rxRate = 0;
+            let txRate = 0;
+
+            if (prevStats[iface.name]) {
+                // Bytes diff / 2 seconds
+                rxRate = (iface.raw_rx - prevStats[iface.name].rx) / 1024 / 2;
+                txRate = (iface.raw_tx - prevStats[iface.name].tx) / 1024 / 2;
+            }
+            
+            // Avoid negative spikes on reset
+            if (rxRate < 0) rxRate = 0;
+            if (txRate < 0) txRate = 0;
+
+            prevStats[iface.name] = { rx: iface.raw_rx, tx: iface.raw_tx };
+
+            // Add Data
+            chartInstance.data.labels.push(now);
+            chartInstance.data.datasets[0].data.push(rxRate);
+            chartInstance.data.datasets[1].data.push(txRate);
+
+            // Update Text Stats
+            document.getElementById('traffic-rx').innerText = rxRate.toFixed(2) + " KB/s";
+            document.getElementById('traffic-tx').innerText = txRate.toFixed(2) + " KB/s";
+
+            // Keep max 20 points
+            if (chartInstance.data.labels.length > 20) {
+                chartInstance.data.labels.shift();
+                chartInstance.data.datasets[0].data.shift();
+                chartInstance.data.datasets[1].data.shift();
+            }
+            chartInstance.update();
+        }
+
+        // 4. Active Connections Table
+        const connTable = document.getElementById('active-conns-table');
+        if (data.active_conns.length > 0) {
+            connTable.innerHTML = data.active_conns.map(conn => `
+                <tr>
+                    <td class="p-3 font-bold text-green-700">${conn.name}</td>
+                    <td class="p-3 font-mono">${conn.real_address}</td>
+                    <td class="p-3">
+                        <span class="text-green-600"><i class="fas fa-arrow-down"></i> ${conn.bytes_received}</span>
+                        <span class="text-gray-400 mx-1">|</span>
+                        <span class="text-blue-600"><i class="fas fa-arrow-up"></i> ${conn.bytes_sent}</span>
+                    </td>
+                    <td class="p-3 text-gray-500">${conn.connected_since}</td>
+                </tr>
+            `).join('');
+        } else {
+            connTable.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400 italic">No active connections.</td></tr>`;
+        }
+    }
+
+    // Init
+    initChart();
+    // Start Polling (2 seconds)
+    setInterval(fetchStats, 2000);
+
+    // --- NAVIGATION ---
+    function switchSection(target) {
+        document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove('bg-gray-900', 'text-white', 'border-l-4', 'border-blue-500');
+            el.classList.add('hover:bg-gray-700');
+        });
+
+        document.getElementById('section-' + target).classList.remove('hidden');
+        
+        const activeNav = document.getElementById('nav-' + target);
+        activeNav.classList.remove('hover:bg-gray-700');
+        activeNav.classList.add('bg-gray-900', 'text-white', 'border-l-4', 'border-blue-500');
+
+        const titles = {
+            'dashboard': 'Dashboard Overview',
+            'users': 'User Management',
+            'settings': 'System Configuration',
+            'logs': 'Realtime Logs'
+        };
+        document.getElementById('page-title').innerText = titles[target];
+
+        if (target === 'logs') {
+            connectWebSocket();
+        }
+
+        localStorage.setItem('activeSection', target);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get('section') || localStorage.getItem('activeSection') || 'dashboard';
+        switchSection(section);
+        fetchStats();
+    });
+
+    // --- WEBSOCKET LOGS ---
+    let ws;
+    const terminal = document.getElementById('terminal-logs');
+    const wsStatus = document.getElementById('ws-status');
+
+    function connectWebSocket() {
+        if (ws && ws.readyState === WebSocket.OPEN) return;
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${protocol}//${window.location.host}/ws/logs`);
+
+        ws.onopen = () => {
+            wsStatus.innerText = 'Connected';
+            wsStatus.className = 'px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700';
+            appendLog('System: Connected to log stream...');
+        };
+
+        ws.onmessage = (event) => {
+            appendLog(event.data);
+        };
+
+        ws.onclose = () => {
+            wsStatus.innerText = 'Disconnected';
+            wsStatus.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700';
+            if (!document.getElementById('section-logs').classList.contains('hidden')) {
+                setTimeout(connectWebSocket, 3000);
+            }
+        };
+    }
+
+    function appendLog(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        terminal.insertBefore(div, terminal.lastElementChild);
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function clearLogs() {
+        terminal.innerHTML = '<div class="text-gray-600 italic border-t border-gray-800 pt-2 mt-2">-- Logs Cleared --</div>';
+    }
+
+    // --- MODALS ---
+    let currentTarget = "";
+    function openDeleteModal(name) {
+        currentTarget = name;
+        document.getElementById('targetNameDisplay').innerText = name;
+        document.getElementById('deleteClientName').value = name;
+        document.getElementById('confirmInput').value = "";
+        document.getElementById('deleteModal').classList.remove('hidden');
+        document.getElementById('deleteBtn').disabled = true;
+        document.getElementById('deleteBtn').classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+    function checkDeleteInput() {
+        if (document.getElementById('confirmInput').value === currentTarget) {
+            document.getElementById('deleteBtn').disabled = false;
+            document.getElementById('deleteBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            document.getElementById('deleteBtn').disabled = true;
+            document.getElementById('deleteBtn').classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    // OTP
+    async function generateOtp(name) {
+        try {
+            const formData = new FormData();
+            formData.append('client_name', name);
+            const res = await fetch('/api/generate_code', { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('otpDisplay').innerText = data.code;
+            document.getElementById('otpModal').classList.remove('hidden');
+        } catch (e) {
+            alert('Connection Error');
+        }
+    }
+</script>
+{% endblock %}

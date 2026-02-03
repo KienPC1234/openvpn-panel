@@ -1,0 +1,23 @@
+[Security]
+# Mật khẩu quản trị viên
+admin_password = admin123
+# Secret key cho cookie (đổi chuỗi ngẫu nhiên dài dòng)
+secret_key = doi_chuoi_nay_thanh_cai_gi_do_bao_mat_hon
+
+[Paths]
+# Đường dẫn tới thư mục chứa file .ovpn user sau khi tạo
+ovpn_out_dir = /root/ovpn_files
+# Đường dẫn cài đặt EasyRSA (mặc định theo script của bạn)
+easy_rsa_dir = /etc/openvpn/server/easy-rsa
+# File chứa template config client
+client_common = /etc/openvpn/server/client-common.txt
+# File chứa IP tĩnh (để khóa user)
+ipp_file = /etc/openvpn/server/ipp.txt
+
+[Network]
+# IP Gateway VPN (mặc định là 10.8.0.1)
+vpn_gateway = 10.8.0.1
+# Port web portal để redirect khi khóa user (dùng port của FastAPI này)
+portal_port = 8000
+# Link messenger cho route /m
+mess_link = https://m.me/username

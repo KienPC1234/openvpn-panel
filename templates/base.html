@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPN Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        /* Custom Scrollbar for Terminal */
+        #terminal-logs::-webkit-scrollbar {
+            width: 8px;
+        }
+        #terminal-logs::-webkit-scrollbar-track {
+            background: #1a1a1a; 
+        }
+        #terminal-logs::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        #terminal-logs::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased overflow-hidden">
+    {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-200">
+    <div class="bg-white p-8 rounded shadow-lg text-center w-full max-w-sm">
+        <h2 class="text-2xl font-bold mb-4 text-green-600">Nhập Code Tải File</h2>
+        <p class="text-sm text-gray-500 mb-6">Nhập mã 6 chữ số được admin cung cấp. Mã chỉ có hiệu lực trong 1 phút.</p>
+        
+        <form action="/code" method="post">
+            <input type="text" name="code" maxlength="6" placeholder="######" class="text-center text-2xl tracking-widest w-full p-3 border rounded mb-4 focus:ring-2 focus:ring-green-500 font-mono" required>
+            <button type="submit" class="w-full bg-green-600 text-white p-3 rounded hover:bg-green-700 font-bold">
+                <i class="fas fa-download mr-2"></i> Tải về ngay
+            </button>
+        </form>
+        
+        <a href="/" class="block mt-4 text-gray-400 text-sm hover:underline">Quay lại trang chủ</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border-t-4 border-blue-600">
+        <div class="text-center mb-8">
+            <div class="inline-block p-3 bg-blue-50 rounded-full text-blue-600 mb-4">
+                <i class="fas fa-shield-alt text-4xl"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-gray-800">VPN Portal</h2>
+            <p class="text-sm text-gray-500 mt-2">Manage your private network with ease</p>
+        </div>
+        
+        <!-- Login Form -->
+        <form action="/login" method="post" class="mb-6">
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Admin Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    <input type="password" name="password" required placeholder="Enter password..." class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 shadow-md transition transform active:scale-95">
+                Login to Dashboard
+            </button>
+        </form>
+
+        <div class="space-y-3 border-t pt-6">
+            <!-- OTP Access -->
+            <a href="/code" class="flex items-center justify-center w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow transition transform active:scale-95">
+                <i class="fas fa-key mr-2"></i> Access via OTP Code
+            </a>
+
+            <!-- SUPPORT LINK (NEW) -->
+            <a href="/m" target="_blank" class="flex items-center justify-center w-full bg-blue-50 text-blue-600 font-bold py-3 rounded-lg hover:bg-blue-100 transition border border-blue-100">
+                <i class="fab fa-facebook-messenger mr-2"></i> Support & Help
+            </a>
+
+            <!-- Installers -->
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
+                <h3 class="font-bold mb-3 text-xs text-gray-500 uppercase tracking-wider">Guest Downloads (Installers):</h3>
+                <ul class="text-sm space-y-2">
+                    {% for file in installers %}
+                    <li>
+                        <a href="/static/openvpn_installer/{{file}}" class="text-blue-600 hover:text-blue-800 flex items-center font-medium">
+                            <i class="fas fa-download mr-2 text-gray-400"></i> {{file}}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="text-gray-400 italic text-xs">No installer files available.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-xs text-gray-400">
+            &copy; 2026 VPN Manager Panel. Secure & Private.
+        </div>
+    </div>
+</div>
+{% endblock %}
