@@ -11,6 +11,10 @@ import shutil
 import datetime
 import asyncio
 import re
+import base64
+import hashlib
+import hmac
+import json
 from pathlib import Path
 from typing import Optional, List, Dict
 
@@ -74,7 +78,52 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # In-memory storage
 otp_storage: Dict[str, Dict] = {}
-session_storage: Dict[str, float] = {} # token -> expiry_timestamp
+
+# --- JWT HELPERS ---
+def create_jwt_token(data: dict, expires_delta: float = 86400) -> str:
+    header = {"alg": "HS256", "typ": "JWT"}
+    payload = data.copy()
+    payload["exp"] = int(time.time() + expires_delta)
+    
+    def b64url(b_data):
+        return base64.urlsafe_b64encode(b_data).decode('utf-8').rstrip('=')
+
+    header_enc = b64url(json.dumps(header).encode('utf-8'))
+    payload_enc = b64url(json.dumps(payload).encode('utf-8'))
+    
+    signature = hmac.new(
+        SECRET_KEY.encode('utf-8'),
+        f"{header_enc}.{payload_enc}".encode('utf-8'),
+        hashlib.sha256
+    ).digest()
+    
+    return f"{header_enc}.{payload_enc}.{b64url(signature)}"
+
+def verify_jwt_token(token: str) -> Optional[dict]:
+    try:
+        header_enc, payload_enc, sig_enc = token.split('.')
+        
+        def b64url_decode(s):
+            padding = '=' * (4 - (len(s) % 4))
+            return base64.urlsafe_b64decode(s + padding)
+
+        # Verify Signature
+        expected_sig = hmac.new(
+            SECRET_KEY.encode('utf-8'),
+            f"{header_enc}.{payload_enc}".encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+        
+        if not hmac.compare_digest(base64.urlsafe_b64encode(expected_sig).decode('utf-8').rstrip('='), sig_enc):
+            return None
+            
+        payload = json.loads(b64url_decode(payload_enc).decode('utf-8'))
+        if payload.get("exp", 0) < time.time():
+            return None
+            
+        return payload
+    except Exception:
+        return None
 
 # --- FIREWALL INIT ---
 def init_firewall():
@@ -401,12 +450,11 @@ def get_active_connections() -> List[Dict]:
 cookie_sec = APIKeyCookie(name="session_token", auto_error=False)
 
 async def get_current_user(token: str = Depends(cookie_sec)):
-    if token and token in session_storage:
-        expiry = session_storage[token]
-        if time.time() < expiry:
-            return "admin"
-        else:
-            del session_storage[token]
+    if not token:
+        return None
+    payload = verify_jwt_token(token)
+    if payload and payload.get("sub") == "admin":
+        return "admin"
     return None
 
 def verify_admin(user: str = Depends(get_current_user)):
@@ -429,26 +477,19 @@ async def home(request: Request, user: str = Depends(get_current_user)):
     return templates.TemplateResponse("login.html", {"request": request, "installers": installers})
 
 @app.post("/login")
-async def login(password: str = Form(...)):
-    for t in list(session_storage.keys()):
-        if session_storage[t] < time.time():
-            del session_storage[t]
-
+async def login(request: Request, password: str = Form(...)):
     if secrets.compare_digest(password, ADMIN_PASSWORD):
-        token = secrets.token_urlsafe(64)
-        session_storage[token] = time.time() + 86400
+        token = create_jwt_token({"sub": "admin"})
         
         response = RedirectResponse(url="/dashboard", status_code=303)
-        response.set_cookie(key="session_token", value=token, max_age=86400, samesite="lax")
+        # Auto-detect HTTPS
+        is_secure = request.url.scheme == "https"
+        response.set_cookie(key="session_token", value=token, httponly=True, max_age=86400, samesite="lax", secure=is_secure)
         return response
     return RedirectResponse(url="/?error=Invalid Password", status_code=303)
 
 @app.get("/logout")
 async def logout(request: Request):
-    token = request.cookies.get("session_token")
-    if token and token in session_storage:
-        del session_storage[token]
-    
     response = RedirectResponse(url="/")
     response.delete_cookie("session_token")
     return response
@@ -492,7 +533,9 @@ async def api_stats(user: str = Depends(verify_admin)):
 @app.websocket("/ws/logs")
 async def websocket_logs(websocket: WebSocket):
     token = websocket.cookies.get("session_token")
-    if not token or token not in session_storage or session_storage[token] < time.time():
+    payload = verify_jwt_token(token) if token else None
+    
+    if not payload or payload.get("sub") != "admin":
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
@@ -518,7 +561,9 @@ async def websocket_logs(websocket: WebSocket):
 @app.websocket("/ws/stats")
 async def websocket_stats(websocket: WebSocket):
     token = websocket.cookies.get("session_token")
-    if not token or token not in session_storage or session_storage[token] < time.time():
+    payload = verify_jwt_token(token) if token else None
+    
+    if not payload or payload.get("sub") != "admin":
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 

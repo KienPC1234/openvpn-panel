@@ -216,3 +216,5 @@ __marimo__/
 .streamlit/secrets.toml
 ovpn/
 config.ini
+
+static/openvpn_installer/openvpn-connect-v3-macos.dmg
