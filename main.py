@@ -288,51 +288,90 @@ def delete_rule_while_exists(rule: List[str]):
             break
 
 def toggle_lock_client(client_name: str, action: str) -> tuple[bool, str]:
+    """
+    Lock:  allow DNS + allow portal port + DNAT HTTP(80) to portal + DROP the rest
+    Unlock: remove those rules (idempotent)
+    NOTE: Do NOT DNAT 443. It breaks Windows captive portal detection (ERR/timeout).
+    """
     ip = get_client_ip(client_name)
     if not ip:
         return False, "IP not found (User has never connected?)"
 
-    # --- CLEANUP (Unlock) ---
-    # 1. Remove Filter Rules (DNS & Portal Allow & Block) from custom chain
-    delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
-    delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
-    # Also remove allowance for Portal Port
-    delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "tcp", "--dport", str(PORTAL_PORT), "-d", VPN_GATEWAY, "-j", "ACCEPT"])
-    delete_rule_while_exists(["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-j", "DROP"])
-    
-    # 2. Remove NAT Redirect Rules (Captive Portal)
-    delete_rule_while_exists(["iptables", "-t", "nat", "-D", "PREROUTING", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
-    delete_rule_while_exists(["iptables", "-t", "nat", "-D", "PREROUTING", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
+    if action not in ("lock", "unlock"):
+        return False, "Invalid action (must be 'lock' or 'unlock')"
 
-    # --- APPLY LOCK ---
-    if action == 'lock':
-        # 1. Allow DNS
-        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
-        if not ok: return False, err
-        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
-        if not ok: return False, err
-        
-        # 2. Allow Traffic to Portal (Critical Fix)
-        # Must allow access to the portal port on the gateway itself
-        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "tcp", "--dport", str(PORTAL_PORT), "-d", VPN_GATEWAY, "-j", "ACCEPT"])
-        if not ok: return False, err
+    # -------------------------
+    # CLEANUP (always do first)
+    # -------------------------
+    cleanup_rules = [
+        # Filter table (custom chain)
+        ["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"],
+        ["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"],
+        ["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-d", VPN_GATEWAY, "-p", "tcp", "--dport", str(PORTAL_PORT), "-j", "ACCEPT"],
+        ["iptables", "-D", FIREWALL_CHAIN, "-s", ip, "-j", "DROP"],
 
-        # 3. Redirect Web Traffic (HTTP/HTTPS) to Portal
-        ok, err = run_command(["iptables", "-t", "nat", "-I", "PREROUTING", "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
-        if not ok: return False, err
-        ok, err = run_command(["iptables", "-t", "nat", "-I", "PREROUTING", "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"])
-        if not ok: return False, err
-        
-        # 4. Block Everything Else
-        # Insert at position 4 (after the 3 Accept rules we just added at pos 1)
-        ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "4", "-s", ip, "-j", "DROP"])
-        if not ok: return False, err
+        # NAT table (PREROUTING) - remove both just in case legacy rules exist
+        ["iptables", "-t", "nat", "-D", "PREROUTING", "-s", ip, "-p", "tcp", "--dport", "80",  "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"],
+        ["iptables", "-t", "nat", "-D", "PREROUTING", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"],
+    ]
+
+    for rule in cleanup_rules:
+        delete_rule_while_exists(rule)
+
+    # If just unlocking, we're done
+    if action == "unlock":
+        # Save rules if available
+        if subprocess.run(["which", "netfilter-persistent"], capture_output=True).returncode == 0:
+            run_command(["netfilter-persistent", "save"])
+        return True, "Unlocked"
+
+    # -------------------------
+    # APPLY LOCK
+    # -------------------------
+    # 1) Allow DNS (UDP/TCP 53)
+    ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
+    if not ok:
+        return False, err
+
+    ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
+    if not ok:
+        return False, err
+
+    # 2) Allow client to reach the portal on the gateway
+    ok, err = run_command([
+        "iptables", "-I", FIREWALL_CHAIN, "1",
+        "-s", ip,
+        "-d", VPN_GATEWAY,
+        "-p", "tcp",
+        "--dport", str(PORTAL_PORT),
+        "-j", "ACCEPT"
+    ])
+    if not ok:
+        return False, err
+
+    # 3) DNAT only HTTP(80) to portal
+    #    (Windows captive portal needs plain HTTP; DNAT 443 often breaks detection / causes long timeouts)
+    ok, err = run_command([
+        "iptables", "-t", "nat", "-I", "PREROUTING", "1",
+        "-s", ip,
+        "-p", "tcp",
+        "--dport", "80",
+        "-j", "DNAT",
+        "--to-destination", f"{VPN_GATEWAY}:{PORTAL_PORT}"
+    ])
+    if not ok:
+        return False, err
+
+    # 4) Drop everything else (place after the 3 ACCEPT rules above)
+    ok, err = run_command(["iptables", "-I", FIREWALL_CHAIN, "4", "-s", ip, "-j", "DROP"])
+    if not ok:
+        return False, err
 
     # Save
     if subprocess.run(["which", "netfilter-persistent"], capture_output=True).returncode == 0:
         run_command(["netfilter-persistent", "save"])
-        
-    return True, "Success"
+
+    return True, "Locked"
 
 def create_ovpn_file(client_name: str) -> bool:
     inline_path = EASY_RSA_DIR / "pki/inline/private" / f"{client_name}.inline"
@@ -462,6 +501,11 @@ def verify_admin(user: str = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     return user
 
+def verify_admin_redirect(user: str = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/?error=Session Expired"})
+    return user
+
 # --- ROUTES ---
 
 @app.get("/", response_class=HTMLResponse)
@@ -499,7 +543,7 @@ async def mess_redirect():
     return RedirectResponse(url=MESS_LINK)
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, msg: Optional[str] = None, section: str = "users", user: str = Depends(verify_admin)):
+async def dashboard(request: Request, msg: Optional[str] = None, section: str = "users", user: str = Depends(verify_admin_redirect)):
     clients = get_clients()
     common_content = CLIENT_COMMON.read_text() if CLIENT_COMMON.exists() else ""
     server_content = SERVER_CONF_PATH.read_text() if SERVER_CONF_PATH.exists() else ""
@@ -681,7 +725,8 @@ def delete_client(client_name: str = Form(...), user: str = Depends(verify_admin
 @app.post("/api/client/lock")
 def lock_client(client_name: str = Form(...), action: str = Form(...), user: str = Depends(verify_admin)):
     success, msg = toggle_lock_client(client_name, action)
-    if not success: raise HTTPException(400, msg)
+    if not success:
+        return RedirectResponse(url=f"/dashboard?msg={msg}", status_code=303)
     return RedirectResponse(url="/dashboard", status_code=303)
 
 @app.post("/api/common/edit")
@@ -702,19 +747,23 @@ def sync_files(user: str = Depends(verify_admin)):
 @app.post("/api/generate_code")
 async def generate_code(client_name: str = Form(...), user: str = Depends(verify_admin)):
     code = ''.join(random.choices(string.digits, k=6))
-    otp_storage[code] = { "client": client_name, "expire": time.time() + 60 }
-    return {"code": code, "ttl": 60}
+    otp_storage[code] = { "client": client_name, "expire": time.time() + 120 }
+    return {"code": code, "ttl": 120}
 
 @app.get("/code", response_class=HTMLResponse)
-async def code_page(request: Request):
-    return templates.TemplateResponse("code_download.html", {"request": request})
+async def code_page(request: Request, error: Optional[str] = None):
+    return templates.TemplateResponse("code_download.html", {"request": request, "error": error})
 
 @app.post("/code")
 async def process_code(code: str = Form(...)):
     data = otp_storage.get(code)
-    if not data or data['expire'] < time.time(): raise HTTPException(400, "Invalid or Expired Code")
+    if not data or data['expire'] < time.time():
+        return RedirectResponse(url="/code?error=Invalid or Expired Code", status_code=303)
+    
     client_name = data['client']
     ovpn_path = OVPN_OUT_DIR / f"{client_name}.ovpn"
-    if not ovpn_path.exists(): raise HTTPException(404, "Config not found")
+    if not ovpn_path.exists():
+        return RedirectResponse(url="/code?error=Config not found", status_code=303)
+    
     del otp_storage[code]
     return FileResponse(ovpn_path, filename=f"{client_name}.ovpn")
