@@ -687,6 +687,10 @@
             formData.append('client_name', name);
             const res = await fetch('/api/generate_code', { method: 'POST', body: formData });
             const data = await res.json();
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
             document.getElementById('otpDisplay').innerText = data.code;
             document.getElementById('otpModal').classList.remove('hidden');
         } catch (e) {

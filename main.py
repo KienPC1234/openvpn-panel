@@ -66,6 +66,7 @@ SERVER_CONF_PATH = Path("/etc/openvpn/server/server.conf")
 SERVICE_NAME = "openvpn-server@server"
 # Chain for FILTER table (Blocking)
 FIREWALL_CHAIN = "VPN_CONTROL"
+OTP_FILE = Path("otp.json")
 
 # --- SETUP APP ---
 app = FastAPI(title="VPN Manager Panel", docs_url=None, redoc_url=None)
@@ -76,8 +77,27 @@ OVPN_OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# In-memory storage
-otp_storage: Dict[str, Dict] = {}
+# --- OTP HELPERS ---
+def load_otps() -> Dict[str, Dict]:
+    if not OTP_FILE.exists():
+        return {}
+    try:
+        data = json.loads(OTP_FILE.read_text())
+        # Prune expired
+        now = time.time()
+        valid_data = {k: v for k, v in data.items() if v['expire'] > now}
+        return valid_data
+    except Exception:
+        return {}
+
+def save_otps(data: Dict[str, Dict]):
+    try:
+        OTP_FILE.write_text(json.dumps(data))
+    except Exception as e:
+        logger.error(f"Error saving OTPs: {e}")
+
+# Initialize otp_storage
+otp_storage = load_otps()
 
 # --- JWT HELPERS ---
 def create_jwt_token(data: dict, expires_delta: float = 86400) -> str:
@@ -746,8 +766,24 @@ def sync_files(user: str = Depends(verify_admin)):
 
 @app.post("/api/generate_code")
 async def generate_code(client_name: str = Form(...), user: str = Depends(verify_admin)):
-    code = ''.join(random.choices(string.digits, k=6))
+    global otp_storage
+    # Ensure client exists
+    if not client_exists(client_name):
+        return {"error": "Client does not exist"}
+
+    # Ensure OVPN file is ready before showing code
+    ovpn_path = OVPN_OUT_DIR / f"{client_name}.ovpn"
+    if not ovpn_path.exists():
+        if not create_ovpn_file(client_name):
+            return {"error": "Could not prepare OVPN file. Please check server logs."}
+
+    # Generate a 4-digit numeric code
+    code = ''.join(secrets.choice(string.digits) for _ in range(4))
+    
+    otp_storage = load_otps() # Refresh from file
     otp_storage[code] = { "client": client_name, "expire": time.time() + 120 }
+    save_otps(otp_storage)
+    
     return {"code": code, "ttl": 120}
 
 @app.get("/code", response_class=HTMLResponse)
@@ -756,7 +792,10 @@ async def code_page(request: Request, error: Optional[str] = None):
 
 @app.post("/code")
 async def process_code(code: str = Form(...)):
+    global otp_storage
+    otp_storage = load_otps() # Refresh from file
     data = otp_storage.get(code)
+    
     if not data or data['expire'] < time.time():
         return RedirectResponse(url="/code?error=Invalid or Expired Code", status_code=303)
     
@@ -766,4 +805,6 @@ async def process_code(code: str = Form(...)):
         return RedirectResponse(url="/code?error=Config not found", status_code=303)
     
     del otp_storage[code]
+    save_otps(otp_storage)
+    
     return FileResponse(ovpn_path, filename=f"{client_name}.ovpn")
