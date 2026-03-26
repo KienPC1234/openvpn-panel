@@ -1,0 +1,76 @@
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Service Status -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex items-center justify-between">
+        <div>
+            <div class="text-[10px] text-gray-500 uppercase font-black tracking-[0.1em] mb-1">SERVICE STATUS</div>
+            <div class="text-lg font-bold {% if service_status == 'active' %}text-green-500{% else %}text-red-500{% endif %} flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full {% if service_status == 'active' %}bg-green-400{% else %}bg-red-400{% endif %} opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 {% if service_status == 'active' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                </span>
+                {{ service_status|upper }}
+            </div>
+        </div>
+        <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center">
+            <i class="fas fa-server text-gray-400"></i>
+        </div>
+    </div>
+
+    <!-- Active Users -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex items-center justify-between">
+        <div>
+            <div class="text-[10px] text-gray-500 uppercase font-black tracking-[0.1em] mb-1">ONLINE CLIENTS</div>
+            <div class="text-xl font-bold text-white flex items-center gap-2">
+                {{ active_users }} <span class="text-xs text-gray-500 font-normal">Active Session{{ active_users|pluralize }}</span>
+            </div>
+        </div>
+        <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
+            <i class="fas fa-users text-blue-500"></i>
+        </div>
+    </div>
+
+    <!-- Total VPN Traffic -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex items-center justify-between">
+        <div>
+            <div class="text-[10px] text-gray-500 uppercase font-black tracking-[0.1em] mb-1">TOTAL VPN TRAFFIC</div>
+            <div class="flex gap-4">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-arrow-down text-emerald-500 text-[10px]"></i>
+                    <span class="text-sm font-bold">{{ total_vpn_rx }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-arrow-up text-blue-500 text-[10px]"></i>
+                    <span class="text-sm font-bold">{{ total_vpn_tx }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center">
+            <i class="fas fa-chart-line text-indigo-500"></i>
+        </div>
+    </div>
+
+    <!-- Interface Stats -->
+    {% for iface in network_stats %}
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex items-center justify-between">
+        <div>
+            <div class="text-[10px] text-gray-500 uppercase font-black tracking-[0.1em] mb-1">INTERFACE: {{ iface.name|upper }}</div>
+            <div class="flex gap-4">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-download text-green-500 text-[10px]"></i>
+                    <span class="text-sm font-bold">{{ iface.rx }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-upload text-blue-500 text-[10px]"></i>
+                    <span class="text-sm font-bold">{{ iface.tx }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+            <i class="fas fa-network-wired text-emerald-500"></i>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- DATA PAYLOAD -->
+{{ traffic_history|json_script:"traffic-data" }}

@@ -1,0 +1,95 @@
+{% extends "unfold/layouts/base.html" %}
+{% load i18n %}
+
+{% block content %}
+    <div class="px-4 py-6 sm:px-6 lg:px-8">
+        <!-- Statistics Section -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+            {% for stat in stats %}
+                <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 flex items-center transition-all hover:border-primary-500">
+                    <div class="rounded-lg p-3 bg-{{ stat.color }}-500/10 mr-4">
+                        <span class="material-symbols-outlined text-{{ stat.color }}-600 dark:text-{{ stat.color }}-400">
+                            {{ stat.icon }}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ stat.title }}</p>
+                        <p class="text-2xl font-extrabold text-gray-900 dark:text-white">{{ stat.value }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-1 mb-8">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-chart-line mr-2 text-primary"></i>Lưu lượng mạng (Gần đây)
+                </h3>
+                <div style="height: 300px;">
+                    <canvas id="trafficChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Default Content -->
+        <div class="mt-8">
+            {{ block.super }}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            const data = JSON.parse('{{ traffic_history|safe|escapejs }}');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(i => i.time),
+                    datasets: [
+                        {
+                            label: 'Download (RX)',
+                            data: data.map(i => i.rx / (1024 * 1024)), // Convert to MB
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Upload (TX)',
+                            data: data.map(i => i.tx / (1024 * 1024)), // Convert to MB
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#9ca3af' } }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Megabytes (MB)', color: '#9ca3af' },
+                            grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                            ticks: { color: '#9ca3af' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af' }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+    <!-- Google Material Symbols for Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+{% endblock %}

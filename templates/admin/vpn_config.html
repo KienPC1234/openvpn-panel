@@ -1,0 +1,62 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .config-card { background: #1e1e2e; border-radius: 12px; border: 1px solid #333; margin-bottom: 2rem; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .config-header { background: #2d2d3d; padding: 12px 20px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
+    .config-header h3 { margin: 0; font-size: 16px; font-weight: 600; color: #fff; }
+    .config-textarea { width: 100%; height: 450px; background: #0f0f17 !important; border: none !important; color: #00ff00 !important; font-family: 'Fira Code', 'Courier New', monospace; font-size: 13px; padding: 20px; outline: none; resize: vertical; display: block; }
+    .save-section { padding: 15px 20px; background: #2d2d3d; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-between; }
+    .hint { color: #888; font-size: 12px; font-style: italic; }
+    .submit-btn { background: #007bff; color: white; border: none; padding: 8px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .submit-btn:hover { background: #0056b3; }
+    .badge-restart { background: #ffc107; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="row">
+        <!-- server.conf -->
+        <div class="col-12 col-lg-7">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="config_type" value="server">
+                <div class="config-card">
+                    <div class="config-header">
+                        <i class="fas fa-server text-info"></i>
+                        <h3>server.conf</h3>
+                        <span class="badge-restart ml-auto"><i class="fas fa-sync-alt"></i> Auto-Restart</span>
+                    </div>
+                    <textarea name="server_conf" class="config-textarea">{{ server_conf }}</textarea>
+                    <div class="save-section">
+                        <span class="hint"><i class="fas fa-info-circle"></i> Việc lưu file này sẽ khởi động lại dịch vụ OpenVPN.</span>
+                        <button type="submit" class="submit-btn shadow-sm">Lưu & Restart VPN</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- client-common.txt -->
+        <div class="col-12 col-lg-5">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="config_type" value="client">
+                <div class="config-card">
+                    <div class="config-header">
+                        <i class="fas fa-file-code text-warning"></i>
+                        <h3>client-common.txt</h3>
+                    </div>
+                    <textarea name="client_common" class="config-textarea">{{ client_common }}</textarea>
+                    <div class="save-section">
+                        <span class="hint"><i class="fas fa-check-circle"></i> Chỉ lưu file (Không restart).</span>
+                        <button type="submit" class="submit-btn" style="background: #28a745;">Lưu Template</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

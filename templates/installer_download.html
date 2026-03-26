@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tải xuống Installer - OpenVPN Manager{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-12">
+    <div class="text-center mb-16">
+        <h1 class="text-4xl font-extrabold text-white mb-4 tracking-tight">Cài đặt <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-600">OpenVPN Connect</span></h1>
+        <p class="text-gray-400 max-w-xl mx-auto">Chọn phiên bản phù hợp với hệ điều hành của bạn để bắt đầu kết nối bảo mật.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+        {% for installer in installers %}
+        <div class="glass-panel group relative overflow-hidden rounded-3xl p-8 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 shadow-2xl">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl group-hover:bg-blue-600/10 transition-all"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center border border-blue-500/20 shadow-inner">
+                        <i class="fab {{ installer.icon }} text-2xl text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">{{ installer.label }}</h3>
+                        <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">{{ installer.size }}</p>
+                    </div>
+                </div>
+
+                <p class="text-gray-400 text-sm mb-8 leading-relaxed">
+                    Phiên bản mới nhất của OpenVPN Client được khuyến nghị cho bảo mật và hiệu năng tối ưu.
+                </p>
+
+                <a href="{{ installer.url }}" class="flex items-center justify-between w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-2xl transform active:scale-95 transition-all shadow-lg shadow-blue-600/20 group/btn">
+                    <span>DOWNLOAD NOW</span>
+                    <i class="fas fa-arrow-down group-hover/btn:translate-y-1 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-20 text-center glass-panel rounded-3xl border border-dashed border-gray-800">
+            <i class="fas fa-folder-open text-gray-700 text-5xl mb-4"></i>
+            <p class="text-gray-500 font-medium">Hiện tại không có bản cài đặt nào khả dụng. Vui lòng liên hệ Admin.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-20 glass-panel rounded-3xl p-10 border border-gray-800 bg-gradient-to-b from-gray-900/50 to-transparent">
+        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <i class="fas fa-info-circle text-blue-400"></i>
+            Hướng dẫn cài đặt
+        </h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="space-y-3">
+                <div class="text-3xl font-black text-gray-800">01</div>
+                <h4 class="font-bold text-white">Tải & Cài đặt</h4>
+                <p class="text-xs text-gray-500">Tải bộ cài ở trên và làm theo hướng dẫn cài đặt của hệ thống.</p>
+            </div>
+            <div class="space-y-3">
+                <div class="text-3xl font-black text-gray-800">02</div>
+                <h4 class="font-bold text-white">Nhập Profile</h4>
+                <p class="text-xs text-gray-500">Sử dụng mã OTP để tải file (.ovpn) và nhập (Import) vào ứng dụng.</p>
+            </div>
+            <div class="space-y-3">
+                <div class="text-3xl font-black text-gray-800">03</div>
+                <h4 class="font-bold text-white">Kết nối</h4>
+                <p class="text-xs text-gray-500">Bật ứng dụng và nhấn phím kết nối để tận hưởng mạng an toàn.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .glass-panel {
+        background: rgba(17, 24, 39, 0.4);
+        backdrop-filter: blur(12px);
+    }
+</style>
+{% endblock %}

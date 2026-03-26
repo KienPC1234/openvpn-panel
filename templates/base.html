@@ -1,30 +1,76 @@
+{% load static tailwind_tags %}
+{% load webpush_notifications %}
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPN Manager</title>
-    <link rel="icon" type="image/png" href="/static/images/logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <style>
-        /* Custom Scrollbar for Terminal */
-        #terminal-logs::-webkit-scrollbar {
-            width: 8px;
-        }
-        #terminal-logs::-webkit-scrollbar-track {
-            background: #1a1a1a; 
-        }
-        #terminal-logs::-webkit-scrollbar-thumb {
-            background: #333; 
-            border-radius: 4px;
-        }
-        #terminal-logs::-webkit-scrollbar-thumb:hover {
-            background: #555; 
-        }
-    </style>
+    <title>{% block title %}OpenVPN Manager{% endblock %}</title>
+    {% tailwind_css %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased overflow-hidden">
-    {% block content %}{% endblock %}
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+    {% if not hide_nav %}
+    <nav class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-10 w-auto" style="filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));">
+                    <span class="text-xl font-extrabold tracking-tight text-white italic">OPENVPN<span class="text-blue-500"> MANAGER</span></span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <a href="{% url 'installer_download' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Tải Installer</a>
+                    <a href="{% url 'otp_download' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Nhập OTP</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Dashboard</a>
+                        {% if user.is_staff %}
+                            <a href="{% url 'admin_user_manage' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Users</a>
+                            <a href="{% url 'admin:index' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Admin</a>
+                        {% endif %}
+                        <div class="flex items-center gap-3 pl-6 border-l border-gray-800">
+                            <span class="text-sm text-gray-400">{{ user.username }}</span>
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-sm font-semibold text-red-500 hover:text-red-400">Logout</button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'register' %}" class="text-sm font-semibold hover:text-blue-400 transition-colors">Đăng ký</a>
+                        <a href="{% url 'login' %}" class="text-sm font-semibold bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="{% if not full_width %}max-w-7xl mx-auto px-4 sm:px-6 lg:px-8{% endif %} flex-grow {% if center_content %}flex items-center justify-center{% else %}py-8{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if not hide_nav %}
+    <footer class="border-t border-gray-800 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            &copy; 2026 Premium VPN Management. All rights reserved.
+        </div>
+    </footer>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('SW Registered at root');
+                }).catch(function(err) {
+                    console.log('SW Registration failed: ', err);
+                });
+            });
+        }
+    </script>
+    {% endif %}
 </body>
 </html>

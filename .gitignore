@@ -218,3 +218,5 @@ ovpn/
 config.ini
 vpn_panel.conf
 *.dmg
+pids
+staticfiles

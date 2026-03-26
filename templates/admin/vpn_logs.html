@@ -1,0 +1,76 @@
+{% extends "unfold/layouts/base.html" %}
+{% load i18n admin_urls static %}
+
+{% block content %}
+<div class="px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 text-3xl">terminal</span>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Service Logs</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <span class="text-sm font-medium text-green-600 dark:text-green-400">Live Updating</span>
+        </div>
+    </div>
+
+    <div class="bg-gray-950 rounded-xl border border-gray-800 shadow-2xl overflow-hidden font-mono text-sm leading-relaxed">
+        <!-- Terminal Header -->
+        <div class="bg-gray-900 px-4 py-2 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+            </div>
+            <div class="text-gray-500 text-xs font-bold uppercase tracking-widest">openvpn-server@server.service</div>
+            <div class="w-10"></div>
+        </div>
+
+        <!-- Terminal Content -->
+        <div id="log-container" 
+             class="p-6 h-[70vh] overflow-y-auto custom-scrollbar"
+             style="scrollbar-width: thin; scrollbar-color: #374151 #030712;"
+             hx-get="{% url 'admin_vpn_logs_content' %}" 
+             hx-trigger="every 3s, load"
+             hx-swap="innerHTML">
+            
+            <!-- Loading State -->
+            <div class="flex flex-col items-center justify-center h-full text-gray-500 italic">
+                <div class="animate-spin mb-4">
+                    <span class="material-symbols-outlined text-4xl">sync</span>
+                </div>
+                <p>Establishing secure connection to system journal...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 text-center">
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+            Showing latest 100 journal entries. Auto-refreshing every 3.0s.
+        </p>
+    </div>
+</div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #030712; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+</style>
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'log-container') {
+            const container = evt.detail.target;
+            container.scrollTop = container.scrollHeight;
+        }
+    });
+</script>
+
+<!-- Material Symbols -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Download VPN Profile - Premium VPN{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-20">
+    <div class="glass-panel rounded-3xl p-8 border border-gray-800 shadow-2xl">
+        <div class="text-center mb-8">
+            <div class="bg-blue-600/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+                <i class="fas fa-key text-blue-400 text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white mb-2">Download <span class="text-blue-500">Profile</span></h1>
+            <p class="text-gray-400 text-sm">Nhập mã OTP được cung cấp bởi Admin để tải file cấu hình VPN của bạn.</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded-xl text-sm {% if message.tags == 'error' %}bg-red-500/10 text-red-500 border border-red-500/20{% else %}bg-green-500/10 text-green-500 border border-green-500/20{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Mã OTP (8 ký tự)</label>
+                <input type="text" name="otp" required maxlength="8" placeholder="VD: ABC12345" 
+                       class="w-full bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 text-white text-xl font-mono tracking-widest focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-center uppercase">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-3 group">
+                <span>Tải xuống Profile</span>
+                <i class="fas fa-download group-hover:translate-y-1 transition-transform"></i>
+            </button>
+        </form>
+
+        <div class="mt-8 pt-8 border-t border-gray-800 text-center">
+            <p class="text-xs text-gray-500">Mã OTP chỉ có hiệu lực trong vòng 24 giờ và chỉ sử dụng được 01 lần.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

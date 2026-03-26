@@ -6,10 +6,29 @@ dependencies:
   - python=3.10
   - pip
   - pip:
-    - fastapi
+    - django
+    - django-jazzmin
+    - django-environ
+    - django-htmx
+    - django-crispy-forms
+    - crispy-bootstrap5
+    - daphne
+    - channels
+    - django-redis
+    - redis
+    - pandas
+    - django-simple-history
+    - django-webpush
+    - django-tailwind
+    - django-browser-reload
     - uvicorn[standard]
     - jinja2
     - python-multipart
     - ujson
     - requests
     - aiofiles
+    - requests-toolbelt
+    - celery
+    - django_celery_beat
+    - cryptography
+    - pywebpush

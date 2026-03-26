@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- User Creation Form -->
+        <div class="col-lg-4 mb-4">
+            <div class="glass-card p-4 h-100">
+                <h3 class="text-white mb-4"><i class="fas fa-user-plus text-primary me-2"></i> Tạo tài khoản mới</h3>
+                <form method="post" class="text-white">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold">
+                            <i class="fas fa-save me-2"></i> TẠO TÀI KHOẢN
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- User List & Management -->
+        <div class="col-lg-8">
+            <div class="glass-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="text-white mb-0"><i class="fas fa-users text-success me-2"></i> Danh sách Thành viên</h3>
+                    <span class="badge bg-secondary rounded-pill px-3">{{ users.count }} tài khoản</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle custom-table">
+                        <thead>
+                            <tr class="text-secondary small text-uppercase">
+                                <th>Người dùng</th>
+                                <th>Thông tin</th>
+                                <th>Gói cước</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary-soft rounded-circle me-3 text-center" style="width: 40px; height: 40px; line-height: 40px;">
+                                            <i class="fas fa-user text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-white">{{ u.username }}</div>
+                                            <div class="small text-secondary">{{ u.email|default:"Chưa có email" }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-white-50 small">{{ u.full_name|default:"---" }}</div>
+                                </td>
+                                <td>
+                                    <div class="text-info fw-bold">{{ u.remaining_days }} ngày</div>
+                                    <div class="small text-secondary">{{ u.balance|floatformat:0 }} VNĐ</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        {% if u.is_vpn_enabled %}
+                                        <span class="badge bg-success-soft text-success border border-success px-2 py-1">HOẠT ĐỘNG</span>
+                                        {% else %}
+                                        <span class="badge bg-danger-soft text-danger border border-danger px-2 py-1">ĐÃ KHÓA</span>
+                                        {% endif %}
+                                        
+                                        <form action="{% url 'admin_user_toggle_lock' u.pk %}" method="post" class="m-0">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm {% if u.is_vpn_enabled %}btn-outline-warning{% else %}btn-outline-success{% endif %} rounded-circle" style="width: 32px; height: 32px; padding: 0;">
+                                                <i class="fas {% if u.is_vpn_enabled %}fa-lock{% else %}fa-unlock{% endif %}"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <button class="btn btn-link text-white-50 p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow-lg border-secondary">
+                                            <li>
+                                                <form action="{% url 'admin_user_toggle_lock' u.pk %}" method="post">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="dropdown-item {% if u.is_vpn_enabled %}text-warning{% else %}text-success{% endif %}">
+                                                        <i class="fas {% if u.is_vpn_enabled %}fa-lock{% else %}fa-unlock{% endif %} me-2"></i>
+                                                        {% if u.is_vpn_enabled %}Khóa tài khoản{% else %}Mở khóa{% endif %}
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-info" href="/admin/vpn_panel/customuser/{{ u.pk }}/change/">
+                                                    <i class="fas fa-edit me-2"></i> Chỉnh sửa nâng cao
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider border-secondary"></li>
+                                            <li>
+                                                <form action="{% url 'admin_user_delete' u.pk %}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA tài khoản này?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="fas fa-trash-alt me-2"></i> Xóa tài khoản
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-secondary">Chưa có người dùng nào.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background: rgba(0, 123, 255, 0.1); }
+    .bg-success-soft { background: rgba(40, 167, 69, 0.1); }
+    .bg-danger-soft { background: rgba(220, 53, 69, 0.1); }
+    .custom-table { border-collapse: separate; border-spacing: 0 10px; }
+    .custom-table tr { background: rgba(255, 255, 255, 0.02); }
+    .custom-table td { border: none !important; padding: 15px !important; }
+    .custom-table tr:hover { transform: scale(1.01); transition: all 0.2s; }
+</style>
+{% endblock %}

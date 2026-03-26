@@ -1,0 +1,30 @@
+{% extends "unfold/change_list.html" %}
+
+{% block content %}
+    {{ block.super }}
+    
+    <div class="mt-8 flex justify-center border-t border-gray-200 dark:border-gray-800 pt-8">
+        <div class="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 max-w-2xl w-full text-center">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hệ thống dọn dẹp</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 italic">
+                Sử dụng nút dưới đây để xóa tất cả người dùng thường (không bao gồm Admin/Staff) 
+                chưa được hệ thống OpenVPN cấp phát địa chỉ IP.
+            </p>
+            <form action="{% url 'admin:vpn_panel_customuser_changelist' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_no_ip_users_action">
+                <input type="hidden" name="select_across" value="1">
+                <input type="hidden" name="index" value="0">
+                <!-- Select all logic isn't strictly needed for our custom action if it ignores queryset, 
+                     but we need to trigger the action mechanism via POST -->
+                
+                <button type="submit" 
+                        class="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2 mx-auto"
+                        onclick="return confirm('Bạn có chắc chắn muốn xóa toàn bộ User chưa có IP? Thao tác này KHÔNG THỂ khôi phục!')">
+                    <span class="material-symbols-outlined text-xl">delete_sweep</span>
+                    XÓA TOÀN BỘ USER CHƯA CÓ IP
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
