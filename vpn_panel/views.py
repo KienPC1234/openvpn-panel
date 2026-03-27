@@ -37,6 +37,9 @@ class RegisterView(CreateView):
 class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
+        if user.is_staff and request.GET.get('force_admin'):
+            return redirect('admin:index')
+            
         if user.requires_profile_update:
             return redirect('profile_update')
         
@@ -179,7 +182,8 @@ class StaffRequiredMixin(UserPassesTestMixin):
 class AdminGenerateOTPView(LoginRequiredMixin, StaffRequiredMixin, View):
     def get(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk)
-        code = ''.join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(8))
+        length = int(VPNService.get_vpn_setting('OTP_CODE_LENGTH', '8'))
+        code = ''.join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(length))
         OTPCode.objects.create(user=user, code=code)
         messages.success(request, f"Mã OTP cho {user.username}: {code}")
         return redirect('admin:vpn_panel_customuser_changelist')
@@ -241,8 +245,16 @@ class AdminUserToggleLockView(LoginRequiredMixin, UserPassesTestMixin, View):
             
             # Also toggle system lock
             if hasattr(user, 'vpn_client'):
-                action = "unlock" if user.is_vpn_enabled else "lock"
+                # Try to get the LATEST IP from status log instead of relying on stale DB
+                status_map = VPNService.get_client_status_map()
+                current_ip = status_map.get(user.vpn_client.name)
+                
+                if current_ip:
+                    user.vpn_client.ip_address = current_ip
+                    user.vpn_client.save()
+                
                 ip = user.vpn_client.ip_address or "0.0.0.0"
+                action = "unlock" if user.is_vpn_enabled else "lock"
                 VPNService.toggle_lock(user.vpn_client.name, ip, action)
             
             status = "MỞ" if user.is_vpn_enabled else "KHÓA"
@@ -255,13 +267,15 @@ class LockedView(View):
         group_setting = Setting.objects.filter(key='PORTAL_GROUP_LINK').first()
         
         # Fallback to static if no setting
-        qr_path = qr_setting.value if (qr_setting and qr_setting.value) else "/static/images/qr.png"
+        qr_path = qr_setting.value if (qr_setting and qr_setting.value) else VPNService.get_vpn_setting('PORTAL_QR_FALLBACK', "/static/images/qr.png")
         group_link = group_setting.value if group_setting else None
+        
+        logo = VPNService.get_vpn_setting('PORTAL_LOGO', "/static/images/logo.png")
         
         return render(request, 'locked.html', {
             'qr_code': qr_path,
             'group_link': group_link,
-            'logo': "/static/images/logo.png"
+            'logo': logo
         })
 
 class PortalRedirectView(View):

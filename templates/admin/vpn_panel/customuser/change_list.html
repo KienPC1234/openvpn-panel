@@ -1,28 +1,29 @@
-{% extends "unfold/change_list.html" %}
+{% extends "admin/change_list.html" %}
 
 {% block content %}
     {{ block.super }}
     
-    <div class="mt-8 flex justify-center border-t border-gray-200 dark:border-gray-800 pt-8">
-        <div class="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 max-w-2xl w-full text-center">
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-200 dark:border-gray-800 pt-8">
+        <!-- Cleanup Users -->
+        <div class="bg-gray-900/10 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 text-center">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hệ thống dọn dẹp</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 italic">
-                Sử dụng nút dưới đây để xóa tất cả người dùng thường (không bao gồm Admin/Staff) 
-                chưa được hệ thống OpenVPN cấp phát địa chỉ IP.
-            </p>
-            <form action="{% url 'admin:vpn_panel_customuser_changelist' %}" method="POST">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 italic">Xóa toàn bộ người dùng thường chưa được cấp file .ovpn.</p>
+            <form action="{% url 'admin:vpn_cleanup_no_ovpn' %}" method="POST">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="delete_no_ip_users_action">
-                <input type="hidden" name="select_across" value="1">
-                <input type="hidden" name="index" value="0">
-                <!-- Select all logic isn't strictly needed for our custom action if it ignores queryset, 
-                     but we need to trigger the action mechanism via POST -->
-                
-                <button type="submit" 
-                        class="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2 mx-auto"
-                        onclick="return confirm('Bạn có chắc chắn muốn xóa toàn bộ User chưa có IP? Thao tác này KHÔNG THỂ khôi phục!')">
-                    <span class="material-symbols-outlined text-xl">delete_sweep</span>
-                    XÓA TOÀN BỘ USER CHƯA CÓ IP
+                <button type="submit" class="w-full px-6 py-3 bg-red-600/10 text-red-600 border border-red-600/20 font-bold rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2" onclick="return confirm('Xóa toàn bộ User chưa có File OVPN?')">
+                    <i class="fas fa-eraser"></i> XÓA USER CHƯA OVPN
+                </button>
+            </form>
+        </div>
+
+        <!-- Global Firewall Reset -->
+        <div class="bg-blue-900/10 dark:bg-blue-900/50 p-6 rounded-2xl border border-blue-200 dark:border-blue-800 text-center">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Reset Tường Lửa</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 italic">Mở khóa tất cả các IP và dọn dẹp mọi luật chặn (DROP) cũ.</p>
+            <form action="{% url 'admin:vpn_global_reset' %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-sync"></i> RESET & MỞ KHÓA TOÀN BỘ
                 </button>
             </form>
         </div>

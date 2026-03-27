@@ -50,129 +50,98 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <!-- Welcome Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <!-- Clean Welcome Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-            <h1 class="text-3xl font-extrabold text-white">Welcome, {{ user.full_name|default:user.username }}</h1>
-            <p class="text-gray-400 mt-1">Manage your VPN connection and view usage stats.</p>
+            <h1 class="text-3xl font-bold text-white tracking-tight">Xin chào, <span class="text-blue-500">{{ user.full_name|default:user.username }}</span></h1>
+            <p class="text-gray-400 mt-1">Chào mừng bạn trở lại. Đây là cổng quản lý VPN cá nhân của bạn.</p>
         </div>
-        <div class="flex items-center gap-3 bg-gray-900 border border-gray-800 px-4 py-2 rounded-xl">
-            <div class="w-3 h-3 rounded-full {% if user.status_text == 'Active' %}bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]{% else %}bg-red-500{% endif %}"></div>
-            <span class="font-bold text-sm uppercase tracking-wider">{{ user.status_text }}</span>
-        </div>
-    </div>
-
-    <!-- Push Notifications Section -->
-    <div class="glass-panel rounded-3xl p-6 border border-gray-800 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center p-2">
-                <img src="{% static 'images/logo.png' %}" alt="Logo" class="w-full h-full object-contain">
+        <div class="flex items-center gap-3 bg-gray-900 border border-gray-800 px-4 py-2 rounded-xl shadow-sm">
+            <div class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full {% if user.status_text == 'Active' %}bg-green-400{% else %}bg-red-400{% endif %} opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 {% if user.status_text == 'Active' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
             </div>
-            <div>
-                <h3 class="text-lg font-bold text-white">Thông báo đẩy (Web Push)</h3>
-                <p class="text-sm text-gray-400">Đăng ký để nhận thông báo về gói cước và trạng thái VPN.</p>
-            </div>
-        </div>
-        <div>
-            {% webpush_button with_class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20" %}
-        </div>
-    </div>
-
-    <div id="push-prompt" class="hidden fixed bottom-6 right-6 z-[100] max-w-sm w-full animate-in slide-in-from-bottom duration-500">
-        <div class="glass-panel rounded-2xl p-5 border border-blue-500/30 shadow-2xl shadow-blue-500/10">
-            <div class="flex gap-4">
-                <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center animate-bounce">
-                    <i class="fas fa-bell text-blue-500 text-xl"></i>
-                </div>
-                <div class="flex-1">
-                    <h4 class="text-white font-bold mb-1">Nhận thông báo gia hạn</h4>
-                    <p class="text-gray-400 text-sm mb-3">Bật thông báo để hệ thống tự động nhắc bạn khi gói cước sắp hết hạn qua điện thoại/pc.</p>
-                    <div class="flex gap-3">
-                        <button id="trigger-webpush" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-all">
-                            Bật ngay ✅
-                        </button>
-                        <button onclick="document.getElementById('push-prompt').remove()" class="text-gray-500 hover:text-gray-300 text-sm">
-                            Để sau
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <span class="font-bold text-xs uppercase tracking-widest text-gray-300">{{ user.status_text }}</span>
         </div>
     </div>
 
     <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Stats and Charts Section -->
-        <div class="lg:col-span-2 space-y-8">
-            <!-- Partial stats container -->
-            <div id="stats-container" hx-get="{% url 'stats_partial' %}" hx-trigger="load, every 20s" hx-swap="innerHTML">
-                <!-- Loading skeletons could go here -->
-                <div class="animate-pulse grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="h-24 bg-gray-900 rounded-2xl border border-gray-800"></div>
-                    <div class="h-24 bg-gray-900 rounded-2xl border border-gray-800"></div>
-                    <div class="h-24 bg-gray-900 rounded-2xl border border-gray-800"></div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+        <!-- Download Portal Card -->
+        <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col justify-between shadow-sm">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-6">
+                    <i class="fas fa-shield-alt"></i> VPN Config
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Kết nối VPN của bạn</h2>
+                <p class="text-gray-400 mb-8 max-w-md">Tải xuống tệp .ovpn để bắt đầu sử dụng VPN. Tương thích với tất cả các ứng dụng OpenVPN.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 mt-auto">
+                {% if user.vpn_client %}
+                    <a href="{% url 'download_ovpn' user.vpn_client.pk %}" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md">
+                        <i class="fas fa-download"></i> TẢI FILE CẤU HÌNH (.OVPN)
+                    </a>
+                    <a href="{% url 'installer_download' %}" class="flex items-center justify-center gap-2 bg-gray-800 text-white font-bold px-6 py-3.5 rounded-xl border border-gray-700 hover:bg-gray-700 transition-all">
+                        <i class="fas fa-laptop"></i> Cài App
+                    </a>
+                {% else %}
+                    <div class="flex-1 flex flex-col items-center justify-center p-6 bg-gray-800/30 border border-dashed border-gray-700 rounded-xl">
+                         <div class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-3"></div>
+                         <p class="text-blue-400 font-bold uppercase tracking-widest text-[10px]">Đang tạo cấu hình...</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Account Info Card -->
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-sm">
+            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                <i class="fas fa-info-circle text-blue-500"></i> Thông tin gói
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+                    <span class="text-gray-500 text-sm">Gói cước</span>
+                    <span class="text-blue-400 font-bold">{{ user.plan_type }}</span>
+                </div>
+                <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+                    <span class="text-gray-500 text-sm">Hết hạn</span>
+                    <span class="text-white font-bold">{{ user.expiry_date|date:"d/m/Y"|default:"Vĩnh viễn" }}</span>
+                </div>
+                <div class="pt-4 text-center">
+                    <div class="text-5xl font-black text-white leading-tight">{{ user.remaining_days }}</div>
+                    <div class="text-[10px] text-gray-500 uppercase font-black mt-1 tracking-widest">Ngày còn lại</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+        <div class="lg:col-span-2 space-y-6">
+            <div id="stats-container" hx-get="{% url 'stats_partial' %}" hx-trigger="load, every 30s" hx-swap="innerHTML">
+                <!-- Loading state -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="animate-pulse h-20 bg-gray-800/50 rounded-xl"></div>
+                    <div class="animate-pulse h-20 bg-gray-800/50 rounded-xl"></div>
                 </div>
             </div>
 
-            <!-- Chart Card -->
-            <div class="glass-panel rounded-2xl p-6 border border-gray-800">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-bold">Traffic <span class="text-blue-500">Analytics</span></h3>
-                    <span class="text-xs text-gray-500 uppercase tracking-widest">Last 30 Min</span>
-                </div>
-                <div class="h-64 relative">
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-sm">
+                <div class="h-64 w-full relative">
                     <canvas id="trafficChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: User Info & Actions -->
-        <div class="space-y-8">
-            <!-- Account Summary Card -->
-            <div class="glass-panel rounded-2xl p-6 border border-gray-800">
-                <h3 class="text-lg font-bold mb-4">Account <span class="text-blue-500">Summary</span></h3>
-                <div class="space-y-4">
-                    <div class="flex justify-between py-3 border-b border-gray-800/50">
-                        <span class="text-gray-400">Class</span>
-                        <span class="font-medium">{{ user.student_class|default:"N/A" }}</span>
-                    </div>
-                    <div class="flex justify-between py-3 border-b border-gray-800/50">
-                        <span class="text-gray-400">Plan</span>
-                        <span class="font-medium text-blue-400">{{ user.plan_type }}</span>
-                    </div>
-                    <div class="flex justify-between py-3 border-b border-gray-800/50">
-                        <span class="text-gray-400">Expiry Date</span>
-                        <span class="font-bold">{{ user.expiry_date|date:"d/m/Y"|default:"Never" }}</span>
-                    </div>
-                    <div class="mt-4 pt-4 text-center">
-                        <div class="text-3xl font-black text-white">{{ user.remaining_days }}</div>
-                        <div class="text-xs text-gray-500 uppercase font-bold mt-1">Days Remaining</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VPN Actions Card -->
-            <div class="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-6">
-                <h3 class="text-lg font-bold mb-4 text-blue-400">VPN <span class="text-white">Profile</span></h3>
-                {% if user.vpn_client %}
-                    <div class="bg-gray-900/50 p-4 rounded-xl mb-6 border border-gray-800">
-                        <div class="text-xs text-gray-500 uppercase font-bold mb-1">Assigned IP</div>
-                        <div class="text-xl font-mono text-blue-400">{{ user.vpn_client.ip_address|default:"Pending..." }}</div>
-                    </div>
-                    <div class="flex flex-col gap-3">
-                        <a href="{% url 'download_ovpn' user.vpn_client.pk %}" class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all">
-                            <i class="fas fa-download"></i> Download Config
-                        </a>
-                        <button hx-post="{% url 'restart_service' %}" class="text-sm text-gray-400 hover:text-white transition-colors py-2">
-                             <i class="fas fa-sync-alt mr-2"></i> Restart Services
-                        </button>
-                    </div>
-                {% else %}
-                    <div class="text-center py-4 bg-gray-900/50 rounded-xl border border-dashed border-gray-700">
-                        <p class="text-sm text-gray-400">Your configuration is being generated...</p>
-                    </div>
-                {% endif %}
+        <div class="space-y-6">
+            <!-- Simple Notification Card -->
+            <div class="bg-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-500/20">
+                <h4 class="font-bold mb-2 flex items-center gap-2">
+                    <i class="fas fa-bell"></i> Thông báo
+                </h4>
+                <p class="text-blue-100 text-xs mb-4">Nhận cập nhật về gói cước và bảo trì hệ thống.</p>
+                {% webpush_button with_class="w-full bg-white text-blue-600 font-bold py-2.5 rounded-xl text-xs transition-colors" %}
             </div>
         </div>
     </div>
@@ -181,39 +150,71 @@
 <script>
     let trafficChart = null;
 
+    const getThemeColor = (name, weight, opacity = 1) => {
+        const defaultColors = {
+            'primary-500': '99, 102, 241',
+            'primary-600': '79, 70, 229',
+            'gray-500': '107, 114, 128',
+            'red-500': '239, 68, 68',
+            'green-500': '34, 197, 94',
+        };
+        const style = getComputedStyle(document.documentElement);
+        let colorStr = style.getPropertyValue(`--color-${name}-${weight}`).trim();
+        
+        if (!colorStr) {
+            const fallback = defaultColors[`${name}-${weight}`] || '99, 102, 241';
+            return `rgba(${fallback}, ${opacity})`;
+        }
+        
+        colorStr = colorStr.replace(/rgba?\(|\)/g, '');
+        const parts = colorStr.split(/[\s,]+/).filter(Boolean);
+        
+        if (parts.length < 3) {
+            const fallback = defaultColors[`${name}-${weight}`] || '99, 102, 241';
+            return `rgba(${fallback}, ${opacity})`;
+        }
+        
+        const [r, g, b] = parts;
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    };
+
     function initOrUpdateChart() {
         const dataTag = document.getElementById('traffic-data');
         if (!dataTag) return;
         
         const history = JSON.parse(dataTag.textContent);
-        
         const labels = history.map(h => h.time);
         const rxData = history.map(h => h.rx / (1024 * 1024));
         const txData = history.map(h => h.tx / (1024 * 1024));
 
         if (!trafficChart) {
             const ctx = document.getElementById('trafficChart').getContext('2d');
+            const primaryColor = getThemeColor('primary', '500');
+
             trafficChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Received (MB)',
+                            label: 'Tải xuống (RX)',
                             data: rxData,
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderColor: primaryColor,
+                            backgroundColor: getThemeColor('primary', '500', 0.1),
                             fill: true,
                             tension: 0.4,
+                            borderWidth: 2,
                             pointRadius: 0
                         },
                         {
-                            label: 'Sent (MB)',
+                            label: 'Tải lên (TX)',
                             data: txData,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
+                            borderColor: '#ec4899',
+                            backgroundColor: 'transparent',
+                            fill: false,
                             tension: 0.4,
+                            borderWidth: 2,
+                            borderDash: [5, 5],
                             pointRadius: 0
                         }
                     ]
@@ -224,19 +225,20 @@
                     scales: {
                         y: { 
                             beginAtZero: false, 
-                            grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#6b7280' }
+                            grid: { color: 'rgba(156, 163, 175, 0.05)' },
+                            ticks: { color: '#6b7280', font: { size: 10 } }
                         },
                         x: { 
                             grid: { display: false },
-                            ticks: { color: '#6b7280' }
+                            ticks: { color: '#6b7280', font: { size: 10 } }
                         }
                     },
                     plugins: {
                         legend: { 
                             display: true, 
                             position: 'top', 
-                            labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 6 } 
+                            align: 'end',
+                            labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 6, font: { size: 11 } } 
                         }
                     }
                 }

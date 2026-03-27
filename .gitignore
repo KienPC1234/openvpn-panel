@@ -220,3 +220,4 @@ vpn_panel.conf
 *.dmg
 pids
 staticfiles
+formula

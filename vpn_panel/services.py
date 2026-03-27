@@ -15,12 +15,17 @@ logger = logging.getLogger(__name__)
 
 class VPNService:
     @staticmethod
-    def get_monitored_interfaces() -> List[str]:
+    def get_vpn_setting(key: str, default: any = None) -> any:
         try:
-            setting = Setting.objects.get(key='MONITORED_INTERFACES')
-            return [i.strip() for i in setting.value.split(',')]
+            return Setting.objects.get(key=key).value
         except Setting.DoesNotExist:
-            return settings.VPN_SETTINGS.get('MONITORED_INTERFACES', ['eth0', 'tun0'])
+            return settings.VPN_SETTINGS.get(key, default)
+
+    @classmethod
+    def get_monitored_interfaces(cls) -> List[str]:
+        val = cls.get_vpn_setting('MONITORED_INTERFACES', 'eth0,tun0')
+        if isinstance(val, list): return val
+        return [i.strip() for i in val.split(',')]
 
     @staticmethod
     def run_command(cmd_list: List[str], cwd: Optional[Path] = None) -> Tuple[bool, str]:
@@ -56,7 +61,7 @@ class VPNService:
 
     @classmethod
     def get_service_status(cls) -> str:
-        service_name = settings.VPN_SETTINGS['SERVICE_NAME']
+        service_name = cls.get_vpn_setting('SERVICE_NAME', 'openvpn-server@server')
         success, output = cls.run_command(["systemctl", "is-active", service_name])
         return output.strip() if success else "inactive"
 
@@ -99,14 +104,14 @@ class VPNService:
 
     @classmethod
     def create_ovpn_file(cls, client_name: str) -> bool:
-        easy_rsa_dir = settings.VPN_SETTINGS['EASY_RSA_DIR']
-        ovpn_out_dir = settings.VPN_SETTINGS['OVPN_OUT_DIR']
+        easy_rsa_dir = Path(cls.get_vpn_setting('EASY_RSA_DIR', '/etc/openvpn/server/easy-rsa'))
+        ovpn_out_dir = Path(cls.get_vpn_setting('OVPN_OUT_DIR', str(settings.BASE_DIR / 'ovpn')))
         # Try different possible paths for inline file depending on EasyRSA version
         inline_path = easy_rsa_dir / "pki/inline/private" / f"{client_name}.inline"
         if not inline_path.exists():
             inline_path = easy_rsa_dir / "pki/inline" / f"{client_name}.inline"
             
-        client_common = settings.VPN_SETTINGS.get('CLIENT_COMMON', Path('/etc/openvpn/server/client-common.txt'))
+        client_common = Path(cls.get_vpn_setting('CLIENT_COMMON', '/etc/openvpn/server/client-common.txt'))
         
         if not inline_path.exists():
             logger.warning(f"Inline file missing for {client_name}")
@@ -116,22 +121,33 @@ class VPNService:
             out_path = ovpn_out_dir / f"{client_name}.ovpn"
             out_path.parent.mkdir(parents=True, exist_ok=True)
             
-            cmd = f"grep -vh '^#' {client_common} {inline_path} > {out_path}"
-            success, err = cls.run_command(["sudo", "sh", "-c", cmd])
+            # Read and combine files in Python to avoid shell/sudo path issues
+            common_data = ""
+            if client_common.exists():
+                with open(client_common, 'r') as f:
+                    common_data = f.read()
             
-            if success:
-                cls.run_command(["sudo", "chmod", "644", str(out_path)])
-                return True
-            else:
-                logger.error(f"Grep failed: {err}")
-                return False
+            with open(inline_path, 'r') as f:
+                inline_data = f.read()
+            
+            # Filter comments explicitly
+            def filter_comments(s):
+                return "\n".join(l for l in s.splitlines() if not l.strip().startswith('#'))
+                
+            final_content = filter_comments(common_data) + "\n\n" + inline_data
+            
+            with open(out_path, 'w') as f:
+                f.write(final_content)
+                
+            cls.run_command(["sudo", "chmod", "644", str(out_path)])
+            return True
         except Exception as e:
             logger.error(f"Error creating ovpn file: {e}")
             return False
 
     @classmethod
     def add_client(cls, name: str) -> Tuple[bool, str]:
-        easy_rsa_dir = settings.VPN_SETTINGS['EASY_RSA_DIR']
+        easy_rsa_dir = Path(cls.get_vpn_setting('EASY_RSA_DIR', '/etc/openvpn/server/easy-rsa'))
         safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', name)
         
         # Check if already exists in easyrsa
@@ -150,8 +166,8 @@ class VPNService:
 
     @classmethod
     def revoke_client(cls, name: str) -> Tuple[bool, str]:
-        easy_rsa_dir = settings.VPN_SETTINGS['EASY_RSA_DIR']
-        ovpn_out_dir = settings.VPN_SETTINGS['OVPN_OUT_DIR']
+        easy_rsa_dir = Path(cls.get_vpn_setting('EASY_RSA_DIR', '/etc/openvpn/server/easy-rsa'))
+        ovpn_out_dir = Path(cls.get_vpn_setting('OVPN_OUT_DIR', str(settings.BASE_DIR / 'ovpn')))
         
         # 1. EasyRSA Revoke
         success, err = cls.run_command(["sudo", "./easyrsa", "--batch", "revoke", name], cwd=easy_rsa_dir)
@@ -167,8 +183,8 @@ class VPNService:
 
     @classmethod
     def regenerate_crl(cls) -> Tuple[bool, str]:
-        easy_rsa_dir = settings.VPN_SETTINGS['EASY_RSA_DIR']
-        server_crl = Path("/etc/openvpn/server/crl.pem")
+        easy_rsa_dir = Path(cls.get_vpn_setting('EASY_RSA_DIR', '/etc/openvpn/server/easy-rsa'))
+        server_crl = Path(cls.get_vpn_setting('SERVER_CRL', '/etc/openvpn/server/crl.pem'))
         
         success, err = cls.run_command(["sudo", "./easyrsa", "--batch", "gen-crl"], cwd=easy_rsa_dir)
         if not success: return False, f"CRL generation failed: {err}"
@@ -183,44 +199,67 @@ class VPNService:
 
     @classmethod
     def toggle_lock(cls, client_name: str, ip: str, action: str) -> Tuple[bool, str]:
-        """Sophisticated locking with DNS preservation and HTTP redirection."""
+        """Sophisticated locking with DNS preservation and verbose logging."""
         if not ip or ip == "0.0.0.0":
+            logger.error(f"IP missing for {client_name}")
             return False, "IP not found"
             
-        gw = "10.8.0.1"
-        portal_port = "8000" # Django port
+        gw = cls.get_vpn_setting('VPN_GATEWAY', '10.8.0.1')
+        portal_port = cls.get_vpn_setting('PORTAL_PORT', '4553')
         chain = "FORWARD"
         nat_chain = "PREROUTING"
 
+        logger.info(f"--- ATTEMPTING {action.upper()} for {client_name} ({ip}) ---")
+
+        # Check if already locked to avoid double rules
+        already_locked, _ = cls.run_command(["sudo", "iptables", "-C", chain, "-s", ip, "-j", "DROP"])
+
         if action == "lock":
-            # 1. Allow DNS
+            if already_locked:
+                logger.info(f"{client_name} already locked.")
+                return True, "Already locked"
+            
+            # Step 1: DNS
             cls.run_command(["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
             cls.run_command(["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
-            # 2. Redirect Web
+            # Step 2: DNAT
             cls.run_command(["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
             cls.run_command(["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-            # 3. Drop all else
+            # Step 3: Block
             cls.run_command(["sudo", "iptables", "-I", chain, "3", "-s", ip, "-j", "DROP"])
+            
+            logger.info(f"Rules applied for user {client_name}")
             cls.save_iptables()
             return True, "Locked"
         else:
-            # Unlock logic - delete all specific rules for this IP
-            # We use semicolon for multiple deletions if possible, or just individual calls
-            cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
-            cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
-            cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-            cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-            cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-j", "DROP"])
+            # Unlock logic - Exhaustive removal
+            max_cleanup = 5
+            for i in range(1, max_cleanup + 1):
+                logger.info(f"Cleanup iteration {i} for {client_name}...")
+                cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
+                cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
+                cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-j", "DROP"])
+                cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
+                cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
+            
+            logger.info(f"Rules flushed for user {client_name}")
             cls.save_iptables()
             return True, "Unlocked"
 
     @classmethod
     def save_iptables(cls):
+        """Durable save logic matching the shell script."""
+        # 1. Try netfilter-persistent
+        success, _ = cls.run_command(["sudo", "netfilter-persistent", "save"])
+        if success: return
+        
+        # 2. Manual save to common paths
         if Path("/etc/iptables/rules.v4").exists():
             cls.run_command(["sudo", "sh", "-c", "iptables-save > /etc/iptables/rules.v4"])
         elif Path("/etc/sysconfig/iptables").exists():
             cls.run_command(["sudo", "sh", "-c", "iptables-save > /etc/sysconfig/iptables"])
-        cls.run_command(["sudo", "iptables-save", ">", "/tmp/iptables.rules"]) # Fallback/Backup
+        else:
+            cls.run_command(["sudo", "sh", "-c", "iptables-save > /etc/iptables.rules"])
 
     @staticmethod
     def generate_otp(client_name: str, expiry_seconds: int = 120) -> str:
@@ -234,7 +273,7 @@ class VPNService:
 
     @classmethod
     def enable_lan_support(cls) -> bool:
-        conf_path = settings.VPN_SETTINGS['SERVER_CONF']
+        conf_path = Path(cls.get_vpn_setting('SERVER_CONF', '/etc/openvpn/server/server.conf'))
         if not conf_path.exists(): return False
         try:
             content = conf_path.read_text()
@@ -249,29 +288,59 @@ class VPNService:
     @classmethod
     def get_online_users(cls) -> List[str]:
         """Returns a list of usernames currently connected from status log."""
-        status_log = settings.VPN_SETTINGS.get('STATUS_LOG', Path('/etc/openvpn/server/openvpn-status.log'))
+        data = cls.get_client_status_map()
+        return list(data.keys())
+
+    @classmethod
+    def get_client_status_map(cls) -> Dict[str, str]:
+        """Parses the status log and returns mapping of username -> virtual_ip"""
+        cache_key = "vpn_client_status_map"
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
+            
+        status_log = Path(cls.get_vpn_setting('STATUS_LOG', '/etc/openvpn/openvpn-status.log'))
         success, content = cls.run_command(["sudo", "cat", str(status_log)])
-        if not success: return []
+        if not success: return {}
         
-        online = []
+        mapping = {}
+        # Parse routing table for Virtual IP assignments
+        is_routing_table = False
+        for line in content.splitlines():
+            if line.startswith("ROUTING TABLE"):
+                is_routing_table = True
+                continue
+            if line.startswith("GLOBAL STATS"):
+                is_routing_table = False
+                continue
+                
+            if is_routing_table and "," in line:
+                parts = line.split(',')
+                # Format: Virtual Address, Common Name, Real Address, Last Ref
+                if len(parts) >= 2 and parts[0].strip() != "Virtual Address":
+                    ip = parts[0].strip()
+                    name = parts[1].strip()
+                    if name != "UNDEF":
+                        mapping[name] = ip
+                        
+        # Also check CLIENT_LIST for status-version 2/3 compatibility
         for line in content.splitlines():
             if line.startswith("CLIENT_LIST,"):
                 parts = line.split(',')
-                if len(parts) > 1:
+                # Version 2: CLIENT_LIST,Common Name,Real Address,Virtual Address,...
+                if len(parts) >= 4:
                     name = parts[1].strip()
+                    ip = parts[3].strip()
                     if name != "UNDEF":
-                        online.append(name)
-            elif "," in line and not line.startswith("HEADER") and not line.startswith("TITLE") and not line.startswith("ROUTING_TABLE") and not line.startswith("GLOBAL_STATS") and not line.startswith("END") and not line.startswith("TIME"):
-                # Standard format usually starts with "Common Name" row
-                parts = line.split(',')
-                if len(parts) > 1 and parts[0].strip() != "Common Name":
-                    online.append(parts[0].strip())
-        return list(set(online))
+                        mapping[name] = ip
+
+        cache.set(cache_key, mapping, timeout=10)
+        return mapping
 
     @classmethod
     def get_per_user_usage(cls) -> Dict[str, Dict]:
         """Returns map of username -> {rx, tx} from status log."""
-        status_log = settings.VPN_SETTINGS.get('STATUS_LOG', Path('/etc/openvpn/openvpn-status.log'))
+        status_log = Path(cls.get_vpn_setting('STATUS_LOG', '/etc/openvpn/openvpn-status.log'))
         success, content = cls.run_command(["sudo", "cat", str(status_log)])
         if not success: return {}
 
@@ -290,21 +359,22 @@ class VPNService:
 
     @classmethod
     def is_user_locked(cls, username: str) -> bool:
-        """Checks if a user's IP is currently DROPPED in iptables."""
+        """Checks if a user's IP is currently DROPPED in iptables FORWARD chain."""
         from .models import Client
         client = Client.objects.filter(name=username).first()
         if not client or not client.ip_address: return False
         
-        success, output = cls.run_command(["sudo", "iptables", "-L", "VPN_CONTROL", "-n"])
-        if success and client.ip_address in output:
-            return "DROP" in output and client.ip_address in output
-        return False
+        # Check if the DROP rule exists for this IP in FORWARD
+        success, _ = cls.run_command(["sudo", "iptables", "-C", "FORWARD", "-s", client.ip_address, "-j", "DROP"])
+        return success
 
     @classmethod
     def sync_system_users(cls) -> Tuple[int, int]:
         """Scans EasyRSA index.txt and IPP for DB sync and ensures OVPN files exist."""
-        index_path = settings.VPN_SETTINGS['EASY_RSA_DIR'] / "pki/index.txt"
-        ipp_path = settings.VPN_SETTINGS.get('IPP_FILE', Path('/etc/openvpn/server/ipp.txt'))
+        easy_rsa_dir = Path(cls.get_vpn_setting('EASY_RSA_DIR', '/etc/openvpn/server/easy-rsa'))
+        index_path = easy_rsa_dir / "pki/index.txt"
+        ipp_path = Path(cls.get_vpn_setting('IPP_FILE', '/etc/openvpn/server/ipp.txt'))
+        ovpn_out_dir = Path(cls.get_vpn_setting('OVPN_OUT_DIR', str(settings.BASE_DIR / 'ovpn')))
         created_count = 0
         skipped_count = 0
         
@@ -346,7 +416,7 @@ class VPNService:
             )
             
             # 3. Ensure OVPN file exists
-            ovpn_file = settings.VPN_SETTINGS['OVPN_OUT_DIR'] / f"{username}.ovpn"
+            ovpn_file = ovpn_out_dir / f"{username}.ovpn"
             if not ovpn_file.exists():
                 cls.create_ovpn_file(username)
                 client.has_ovpn_file = True
@@ -402,6 +472,6 @@ class VPNService:
     @classmethod
     def get_service_logs(cls, lines: int = 100) -> str:
         """Fetches the latest service logs using journalctl."""
-        service_name = settings.VPN_SETTINGS.get('SERVICE_NAME', 'openvpn-server@server')
+        service_name = cls.get_vpn_setting('SERVICE_NAME', 'openvpn-server@server')
         success, output = cls.run_command(["sudo", "journalctl", "-u", service_name, "--no-pager", "-n", str(lines)])
         return output if success else f"Error fetching logs: {output}"

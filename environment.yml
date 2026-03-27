@@ -3,32 +3,29 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.10
+  - python=3.12
   - pip
   - pip:
-    - django
-    - django-jazzmin
-    - django-environ
-    - django-htmx
-    - django-crispy-forms
-    - crispy-bootstrap5
-    - daphne
-    - channels
-    - django-redis
-    - redis
-    - pandas
-    - django-simple-history
-    - django-webpush
-    - django-tailwind
-    - django-browser-reload
-    - uvicorn[standard]
-    - jinja2
-    - python-multipart
-    - ujson
-    - requests
-    - aiofiles
-    - requests-toolbelt
-    - celery
-    - django_celery_beat
-    - cryptography
-    - pywebpush
+    - django==6.0.3
+    - django-unfold==0.87.0
+    - django-environ==0.13.0
+    - django-htmx==1.27.0
+    - django-crispy-forms==2.6
+    - crispy-bootstrap5==2026.3
+    - daphne==4.2.1
+    - channels==4.3.2
+    - django-redis==6.0.0
+    - redis==7.4.0
+    - pandas==3.0.1
+    - django-simple-history==3.11.0
+    - django-webpush==0.3.6
+    - django-tailwind==4.4.2
+    - django-browser-reload==1.21.0
+    - uvicorn==0.35.0
+    - celery==5.6.2
+    - django-celery-beat==2.9.0
+    - cryptography==46.0.6
+    - pywebpush==2.3.0
+    - psycopg2-binary==2.9.10
+    - requests==2.32.3
+    - ujson==5.12.0

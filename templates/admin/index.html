@@ -1,95 +1,212 @@
-{% extends "unfold/layouts/base.html" %}
-{% load i18n %}
+{% extends 'admin/base.html' %}
+{% load i18n unfold %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
 
 {% block content %}
-    <div class="px-4 py-6 sm:px-6 lg:px-8">
-        <!-- Statistics Section -->
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-            {% for stat in stats %}
-                <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 flex items-center transition-all hover:border-primary-500">
-                    <div class="rounded-lg p-3 bg-{{ stat.color }}-500/10 mr-4">
-                        <span class="material-symbols-outlined text-{{ stat.color }}-600 dark:text-{{ stat.color }}-400">
-                            {{ stat.icon }}
+<div class="flex flex-col gap-12">
+    <!-- HERO SECTION (Formula Style) -->
+    <div class="border border-base-200 overflow-hidden rounded-default dark:border-base-800 shadow-sm">
+        <div class="bg-linear-to-br from-white to-base-50 dark:from-base-900 dark:to-base-950 p-6 lg:p-12">
+            <div class="flex flex-col md:flex-row items-center gap-12">
+                <div class="grow">
+                    <div class="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-green-500/10 text-green-600 text-xs font-bold uppercase tracking-widest border border-green-500/20">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                         </span>
+                        {% trans "Hệ thống đang hoạt động ổn định" %}
                     </div>
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ stat.title }}</p>
-                        <p class="text-2xl font-extrabold text-gray-900 dark:text-white">{{ stat.value }}</p>
-                    </div>
+                    
+                    <h1 class="font-black leading-tight tracking-tighter text-4xl lg:text-5xl mb-6">
+                         {% trans "Chào mừng trở lại," %} <br>
+                         <span class="text-primary-600">OpenVPN Manager </span>
+                    </h1>
+                    
+                    <p class="text-lg opacity-70 max-w-2xl leading-relaxed">
+                        {% trans "Giám sát lưu lượng, quản lý người dùng và tối ưu hóa hệ thống vpn của bạn với các bảng phân tích thời gian thực chuyên nghiệp." %}
+                    </p>
                 </div>
-            {% endfor %}
-        </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-1 mb-8">
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                    <i class="fas fa-chart-line mr-2 text-primary"></i>Lưu lượng mạng (Gần đây)
-                </h3>
-                <div style="height: 300px;">
-                    <canvas id="trafficChart"></canvas>
+                <div class="flex flex-col items-center gap-4 text-center min-w-[200px]">
+                     <div class="text-[54px] font-black tracking-tighter text-primary-600 leading-none">
+                         {{ stats.0.value }}
+                     </div>
+                     <p class="font-bold opacity-40 uppercase tracking-widest text-xs">{% trans "Lợi nhuận tích lũy" %}</p>
+                     
+                     <div class="mt-4">
+                         {% component "unfold/components/button.html" with href="/admin/vpn_panel/subscription/" %}
+                             {% trans "Quản lý gói cước" %}
+                         {% endcomponent %}
+                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Default Content -->
-        <div class="mt-8">
-            {{ block.super }}
+        <div class="bg-base-100/50 dark:bg-base-900/50 px-6 py-4 flex items-center justify-between border-t border-base-200 dark:border-base-800">
+             <div class="flex items-center gap-6">
+                 <div class="flex items-center gap-2">
+                     <span class="material-symbols-outlined text-primary-500 text-sm">update</span>
+                     <span class="text-xs font-bold opacity-50 uppercase tracking-widest">Cập nhật: {{ last_sync|default:"Now" }}</span>
+                 </div>
+                 <div class="flex items-center gap-2">
+                     <span class="material-symbols-outlined text-primary-500 text-sm">group</span>
+                     <span class="text-xs font-bold opacity-50 uppercase tracking-widest">{{ stats.1.value }} Thành viên</span>
+                 </div>
+             </div>
+             
+             <div class="hidden md:block">
+                 <span class="text-xs italic opacity-40">{% trans "Made with Unfold Studio Patterns" %}</span>
+             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('trafficChart').getContext('2d');
-            const data = JSON.parse('{{ traffic_history|safe|escapejs }}');
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.map(i => i.time),
-                    datasets: [
-                        {
-                            label: 'Download (RX)',
-                            data: data.map(i => i.rx / (1024 * 1024)), // Convert to MB
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Upload (TX)',
-                            data: data.map(i => i.tx / (1024 * 1024)), // Convert to MB
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: '#9ca3af' } }
+    <!-- MAIN STATS GRID -->
+    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {% for stat in stats %}
+            <div class="bg-white group border border-base-200 flex flex-col overflow-hidden rounded-default transition-all hover:border-primary-500/50 dark:bg-base-900 dark:border-base-800">
+                <div class="p-8 pb-4 flex items-center justify-between">
+                     <div class="p-4 rounded-2xl bg-base-50 dark:bg-base-950 group-hover:bg-primary-500/10 transition-colors">
+                         <span class="material-symbols-outlined text-3xl text-primary-600 transition-transform group-hover:scale-110">
+                             {{ stat.icon }}
+                         </span>
+                     </div>
+                     <span class="material-symbols-outlined opacity-0 group-hover:opacity-20 transition-all text-6xl -mr-4">
+                         {{ stat.icon }}
+                     </span>
+                </div>
+                
+                <div class="px-8 pb-8">
+                    <h3 class="font-bold text-sm uppercase tracking-widest opacity-40 mb-1">{{ stat.title }}</h3>
+                    <div class="text-4xl font-black tracking-tight mb-2">{{ stat.value }}</div>
+                    {% if forloop.counter == 1 %}
+                        <div class="flex items-center gap-2 text-green-600 font-bold text-xs uppercase tracking-widest">
+                            <span class="material-symbols-outlined text-sm">trending_up</span>
+                            <span>+12% so với tháng trước</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- CHART SECTION -->
+    <div class="bg-white border border-base-200 rounded-default overflow-hidden dark:bg-base-900 dark:border-base-800">
+        <div class="p-6 border-b border-base-200 dark:border-base-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary-600">monitoring</span>
+                <h2 class="font-bold text-lg tracking-tight">{% trans "Biểu đồ lưu lượng truy cập" %}</h2>
+            </div>
+            <div class="text-xs font-bold opacity-40 uppercase tracking-widest">{% trans "Real-time Metrics" %}</div>
+        </div>
+        
+        <div class="p-8">
+            <div style="height: 400px;">
+                <canvas id="trafficChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACCESS GRID (Formula Step Style) -->
+    <div class="bg-primary-950/5 dark:bg-primary-500/5 border border-base-200 border-dashed rounded-default p-6 lg:p-12 dark:border-base-800">
+        <div class="flex items-center gap-3 mb-12 ml-2">
+            <span class="p-2 bg-primary-600 rounded-lg text-white">
+                <i class="fas fa-rocket"></i>
+            </span>
+            <h3 class="text-xl font-black tracking-tight">{% trans "Danh mục quản lý nhanh" %}</h3>
+        </div>
+        
+        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {% if app_list %}
+                {% for app in app_list %}
+                    {% for model in app.models %}
+                        <a href="{{ model.admin_url }}" class="group flex flex-col gap-4">
+                            <span class="material-symbols-outlined text-primary-600 dark:text-primary-500 text-3xl transition-transform group-hover:scale-125 group-hover:rotate-12 origin-left">
+                                folder_open
+                            </span>
+                            <div class="flex flex-col gap-1">
+                                <h4 class="font-bold text-base text-important tracking-tight group-hover:text-primary-600 transition-colors">
+                                    {{ model.name }}
+                                </h4>
+                                <p class="text-xs uppercase font-black opacity-30 tracking-widest">{{ app.name }}</p>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="border-t border-base-200 pb-8 pt-8 text-center dark:border-base-800 text-xs font-bold opacity-30 uppercase tracking-[0.2em]">
+        © 2023 - {% now "Y" %} OpenVPN Manager Control Center
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('trafficChart').getContext('2d');
+        const dataRow = '{{ traffic_history|safe }}';
+        const data = dataRow ? JSON.parse(dataRow) : [];
+        
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        const fontColor = isDarkMode ? '#94a3b8' : '#64748b';
+        const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.05)' : 'rgba(100, 116, 139, 0.1)';
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(i => i.time),
+                datasets: [
+                    {
+                        label: 'Tải xuống (RX)',
+                        data: data.map(i => i.rx / (1024 * 1024)),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 4,
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
                     },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            title: { display: true, text: 'Megabytes (MB)', color: '#9ca3af' },
-                            grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        x: { 
-                            grid: { display: false },
-                            ticks: { color: '#9ca3af' }
-                        }
+                    {
+                        label: 'Tải lên (TX)',
+                        data: data.map(i => i.tx / (1024 * 1024)),
+                        borderColor: '#ec4899',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        borderDash: [8, 4],
+                        pointRadius: 0,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'top', 
+                        align: 'end',
+                        labels: { color: fontColor, font: { weight: 'bold' }, usePointStyle: true } 
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: fontColor, callback: (v) => v + ' MB' }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: fontColor }
                     }
                 }
-            });
+            }
         });
-    </script>
-
-    <!-- Google Material Symbols for Icons -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    });
+</script>
 {% endblock %}

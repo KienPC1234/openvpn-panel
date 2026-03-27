@@ -52,9 +52,29 @@ class CustomUser(AbstractUser):
         old_user = CustomUser.objects.filter(pk=self.pk).first()
         is_new = self.pk is None
         
-        # Determine if VPN should be enabled
-        should_be_enabled = (self.status in ['ACTIVE', 'DEMO'])
-        self.is_vpn_enabled = should_be_enabled
+        # Detect if admin is trying to UNLOCK an expired user
+        if old_user and not old_user.is_vpn_enabled and self.is_vpn_enabled:
+            # If they were expired, give them X days
+            today = timezone.now().date()
+            if self.expiry_date and self.expiry_date < today:
+                # Update duration_days to give +X days from today
+                days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '3'))
+                if not self.purchase_date:
+                    self.purchase_date = today
+                
+                delta = today - self.purchase_date
+                self.duration_days = delta.days + days
+                # Recalculate expiry_date
+                self.expiry_date = self.purchase_date + timedelta(days=self.duration_days)
+                self.status = 'ACTIVE'
+        
+        # Only auto-disable if REALLY expired and not manually enabled
+        if self.status == 'EXPIRED' and not self.is_vpn_enabled:
+             pass # Already disabled or remains disabled
+        elif self.status in ['ACTIVE', 'DEMO']:
+             # If status is active, ensure it's enabled unless manually handled
+             # (Actually, let's trust the is_vpn_enabled field more)
+             pass
 
         super().save(*args, **kwargs)
 
@@ -63,7 +83,17 @@ class CustomUser(AbstractUser):
             if old_user.is_vpn_enabled != self.is_vpn_enabled:
                 mode = "unlock" if self.is_vpn_enabled else "lock"
                 if hasattr(self, 'vpn_client'):
-                    VPNService.toggle_lock(self.vpn_client.name, self.vpn_client.ip_address or "0.0.0.0", mode)
+                    # Always try to refresh IP before calling firewall toggle
+                    status_map = VPNService.get_client_status_map()
+                    current_ip = status_map.get(self.vpn_client.name)
+                    if current_ip:
+                        # Use update(ip=...) to avoid triggering save() loop if we really want to be safe, 
+                        # but self.vpn_client is a separate model.
+                        self.vpn_client.ip_address = current_ip
+                        self.vpn_client.save(update_fields=['ip_address'])
+                    
+                    ip = self.vpn_client.ip_address or "0.0.0.0"
+                    VPNService.toggle_lock(self.vpn_client.name, ip, mode)
 
     @property
     def remaining_days(self):
@@ -103,8 +133,10 @@ class OTPCode(models.Model):
     expires_at = models.DateTimeField()
 
     def save(self, *args, **kwargs):
+        from .services import VPNService
         if not self.expires_at:
-            self.expires_at = timezone.now() + timedelta(hours=24)
+            hours = int(VPNService.get_vpn_setting('OTP_EXPIRY_HOURS', '24'))
+            self.expires_at = timezone.now() + timedelta(hours=hours)
         super().save(*args, **kwargs)
 
     def is_valid(self):
