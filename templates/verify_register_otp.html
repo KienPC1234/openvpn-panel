@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static i18n crispy_forms_tags %}
+
+{% block title %}{% translate "Verify Email" %} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="fixed inset-0 min-h-screen flex w-full">
+    <!-- Left Pane - Form -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-950 relative z-10">
+        
+        <div class="w-full max-w-md backdrop-blur-3xl bg-gray-900/50 p-10 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden">
+            <!-- Decorative blur -->
+            <div class="absolute -top-32 -right-32 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+            
+            <div class="mb-10 text-center relative z-10">
+                <div class="inline-flex p-3 rounded-2xl bg-blue-500/10 mb-6">
+                    <span class="material-symbols-outlined text-4xl text-blue-500">mark_email_read</span>
+                </div>
+                <h2 class="text-3xl font-black text-white tracking-tight leading-tight">{% translate "Verify your email" %}</h2>
+                <p class="text-gray-400 mt-3 text-sm">{% translate "We've sent a 6-digit verification code to your email address. It expires in 10 minutes." %}</p>
+            </div>
+
+            <form method="post" class="space-y-6 relative z-10">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{% translate "Confirmation Code" %}</label>
+                    <div class="relative group">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 material-symbols-outlined transition-colors group-focus-within:text-blue-500">password</span>
+                        <input type="text" name="otp" required maxlength="6" class="w-full bg-gray-950 border border-gray-800 text-white text-sm rounded-xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-mono tracking-[0.5em] text-center" placeholder="123456" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                        {% translate "Verify Email" %}
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-8 text-center text-sm font-medium relative z-10">
+                <span class="text-gray-500">{% translate "Didn't receive the email?" %}</span>
+                <a href="{% url 'register' %}" class="text-blue-400 hover:text-blue-300 ml-1 transition-colors">{% translate "Try registering again" %}</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Pane - Visual -->
+    <div class="hidden lg:block lg:w-1/2 relative overflow-hidden bg-[#0a0a0f]">
+        <!-- Complex Abstract Background -->
+        <div class="absolute inset-0 z-0">
+            <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-pulse"></div>
+            <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50"></div>
+            
+            <!-- Grid Pattern overlay -->
+            <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px); background-size: 40px 40px;"></div>
+        </div>
+        
+        <div class="relative z-10 h-full flex flex-col justify-center px-24">
+            <div class="text-blue-500 font-bold uppercase tracking-[0.2em] mb-4 text-xs">{% translate "Secure System" %}</div>
+            <h1 class="text-6xl font-black text-white leading-[1.1] tracking-tighter mb-8">
+                {% translate "Enterprise-grade" %}<br>
+                <span class="text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-purple-400">
+                    {% translate "security" %}
+                </span>
+            </h1>
+            <p class="text-gray-400 text-lg max-w-md leading-relaxed">
+                {% translate "We verify your email to ensure the highest level of security for your account and to prevent unauthorized access." %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

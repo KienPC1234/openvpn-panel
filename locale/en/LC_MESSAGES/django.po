@@ -1,0 +1,920 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-27 14:46+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/admin/index.html:20
+msgid "System is operating stably"
+msgstr ""
+
+#: templates/admin/index.html:24
+msgid "Welcome back,"
+msgstr ""
+
+#: templates/admin/index.html:29
+msgid ""
+"Monitor traffic, manage users, and optimize your vpn system with "
+"professional real-time analytics panels."
+msgstr ""
+
+#: templates/admin/index.html:37 vpn_panel/admin.py:57
+msgid "Total Revenue"
+msgstr ""
+
+#: templates/admin/index.html:41
+msgid "Manage Subscription"
+msgstr ""
+
+#: templates/admin/index.html:52
+msgid "Update"
+msgstr ""
+
+#: templates/admin/index.html:56
+msgid "Members"
+msgstr ""
+
+#: templates/admin/index.html:61
+msgid "Made with Unfold Studio Patterns"
+msgstr ""
+
+#: templates/admin/index.html:87
+#, python-format
+msgid "+12%% compared to last month"
+msgstr ""
+
+#: templates/admin/index.html:100
+msgid "Traffic Analytics Chart"
+msgstr ""
+
+#: templates/admin/index.html:102
+msgid "Real-time Metrics"
+msgstr ""
+
+#: templates/admin/index.html:118
+msgid "Quick Management"
+msgstr ""
+
+#: templates/admin/index.html:164 templates/dashboard.html:200
+msgid "Download (RX)"
+msgstr ""
+
+#: templates/admin/index.html:175 templates/dashboard.html:210
+msgid "Upload (TX)"
+msgstr ""
+
+#: templates/admin/user_manage.html:10
+msgid "Create New Account"
+msgstr ""
+
+#: templates/admin/user_manage.html:16 templates/register.html:60
+msgid "CREATE ACCOUNT"
+msgstr ""
+
+#: templates/admin/user_manage.html:27
+msgid "Member List"
+msgstr ""
+
+#: templates/admin/user_manage.html:28
+#, python-format
+msgid "%(count)s account"
+msgid_plural "%(count)s accounts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/user_manage.html:35
+msgid "User"
+msgstr ""
+
+#: templates/admin/user_manage.html:36
+msgid "Info"
+msgstr ""
+
+#: templates/admin/user_manage.html:37
+msgid "Plan"
+msgstr ""
+
+#: templates/admin/user_manage.html:38 templates/partials/client_list.html:7
+#: vpn_panel/admin.py:247
+msgid "Status"
+msgstr ""
+
+#: templates/admin/user_manage.html:39 templates/partials/client_list.html:10
+#: vpn_panel/admin.py:271
+msgid "Actions"
+msgstr ""
+
+#: templates/admin/user_manage.html:52
+msgid "No email"
+msgstr ""
+
+#: templates/admin/user_manage.html:60
+#, python-format
+msgid "%(days)s days"
+msgstr ""
+
+#: templates/admin/user_manage.html:66
+msgid "ACTIVE"
+msgstr ""
+
+#: templates/admin/user_manage.html:68 vpn_panel/admin.py:281
+#: vpn_panel/admin.py:344 vpn_panel/views.py:265
+msgid "LOCKED"
+msgstr ""
+
+#: templates/admin/user_manage.html:90
+msgid "Lock Account"
+msgstr ""
+
+#: templates/admin/user_manage.html:90
+msgid "Unlock Account"
+msgstr ""
+
+#: templates/admin/user_manage.html:96
+msgid "Advanced Edit"
+msgstr ""
+
+#: templates/admin/user_manage.html:101
+msgid "Are you sure you want to DELETE this account?"
+msgstr ""
+
+#: templates/admin/user_manage.html:106
+msgid "Delete Account"
+msgstr ""
+
+#: templates/admin/user_manage.html:116
+msgid "No members found."
+msgstr ""
+
+#: templates/base.html:41
+msgid "Download App"
+msgstr ""
+
+#: templates/base.html:42
+msgid "Enter OTP"
+msgstr ""
+
+#: templates/base.html:44 templates/dashboard.html:4 vpn_project/settings.py:78
+msgid "Dashboard"
+msgstr ""
+
+#: templates/base.html:46
+msgid "Users"
+msgstr ""
+
+#: templates/base.html:47
+msgid "Admin"
+msgstr ""
+
+#: templates/base.html:53
+msgid "Logout"
+msgstr ""
+
+#: templates/base.html:57
+msgid "Register"
+msgstr ""
+
+#: templates/base.html:58 templates/login.html:3
+msgid "Login"
+msgstr ""
+
+#: templates/base.html:73
+msgid "Premium VPN Management. All rights reserved."
+msgstr ""
+
+#: templates/dashboard.html:56
+#, python-format
+msgid "Welcome, <span class=\"text-blue-500\">%(name)s</span>"
+msgstr ""
+
+#: templates/dashboard.html:57
+msgid "Welcome back. This is your personal VPN management portal."
+msgstr ""
+
+#: templates/dashboard.html:74
+msgid "VPN Config"
+msgstr ""
+
+#: templates/dashboard.html:76
+msgid "Your VPN Connection"
+msgstr ""
+
+#: templates/dashboard.html:77
+msgid ""
+"Download your .ovpn file to start using the VPN. Compatible with all OpenVPN "
+"apps."
+msgstr ""
+
+#: templates/dashboard.html:83
+msgid "DOWNLOAD CONFIG (.OVPN)"
+msgstr ""
+
+#: templates/dashboard.html:86
+msgid "Install App"
+msgstr ""
+
+#: templates/dashboard.html:91
+msgid "Generating config..."
+msgstr ""
+
+#: templates/dashboard.html:100
+msgid "Plan Info"
+msgstr ""
+
+#: templates/dashboard.html:104
+msgid "Plan Type"
+msgstr ""
+
+#: templates/dashboard.html:108
+msgid "Expiry"
+msgstr ""
+
+#: templates/dashboard.html:109
+msgid "Never"
+msgstr ""
+
+#: templates/dashboard.html:113 vpn_panel/admin.py:411
+msgid "Days Remaining"
+msgstr ""
+
+#: templates/dashboard.html:141
+msgid "Notifications"
+msgstr ""
+
+#: templates/dashboard.html:143
+msgid "Get updates on your plan and system maintenance."
+msgstr ""
+
+#: templates/installer_download.html:4
+msgid "Download Installer"
+msgstr ""
+
+#: templates/installer_download.html:9
+msgid "Install"
+msgstr ""
+
+#: templates/installer_download.html:10
+msgid ""
+"Choose the version compatible with your OS to start your secure connection."
+msgstr ""
+
+#: templates/installer_download.html:30
+msgid ""
+"The latest version of OpenVPN Client is recommended for optimal security and "
+"performance."
+msgstr ""
+
+#: templates/installer_download.html:34
+msgid "DOWNLOAD NOW"
+msgstr ""
+
+#: templates/installer_download.html:42
+msgid "No installers available at the moment. Please contact Admin."
+msgstr ""
+
+#: templates/installer_download.html:50
+msgid "Installation Guide"
+msgstr ""
+
+#: templates/installer_download.html:55
+msgid "Download & Install"
+msgstr ""
+
+#: templates/installer_download.html:56
+msgid ""
+"Download the installer above and follow the system installation instructions."
+msgstr ""
+
+#: templates/installer_download.html:60
+msgid "Import Profile"
+msgstr ""
+
+#: templates/installer_download.html:61
+msgid ""
+"Use the OTP code to download the profile (.ovpn) and import it into the app."
+msgstr ""
+
+#: templates/installer_download.html:65
+msgid "Connect"
+msgstr ""
+
+#: templates/installer_download.html:66
+msgid "Open the app and press the connect button to enjoy a secure network."
+msgstr ""
+
+#: templates/locked.html:7
+msgid "VPN Locked"
+msgstr ""
+
+#: templates/locked.html:47
+msgid "Connection Suspended"
+msgstr ""
+
+#: templates/locked.html:49
+msgid "Account Suspended"
+msgstr ""
+
+#: templates/locked.html:50
+msgid ""
+"Your plan has expired or has been suspended. Please renew to restore "
+"Internet access."
+msgstr ""
+
+#: templates/locked.html:55
+msgid "Scan QR for quick payment"
+msgstr ""
+
+#: templates/locked.html:67
+msgid "Telegram Support"
+msgstr ""
+
+#: templates/locked.html:71
+msgid "Try Reconnecting"
+msgstr ""
+
+#: templates/login.html:15
+msgid "Secure Access Gateway"
+msgstr ""
+
+#: templates/login.html:26
+msgid "Username"
+msgstr ""
+
+#: templates/login.html:33
+msgid "Enter your username"
+msgstr ""
+
+#: templates/login.html:38
+msgid "Password"
+msgstr ""
+
+#: templates/login.html:52
+msgid "Invalid username or password."
+msgstr ""
+
+#: templates/login.html:58
+msgid "SIGN IN"
+msgstr ""
+
+#: templates/login.html:65
+msgid "Don't have an account?"
+msgstr ""
+
+#: templates/login.html:66
+msgid "Create Account"
+msgstr ""
+
+#: templates/otp_download.html:4
+msgid "Download VPN Profile"
+msgstr ""
+
+#: templates/otp_download.html:13
+msgid "Download"
+msgstr ""
+
+#: templates/otp_download.html:13
+msgid "Profile"
+msgstr ""
+
+#: templates/otp_download.html:14
+msgid ""
+"Enter the OTP code provided by Admin to download your VPN configuration file."
+msgstr ""
+
+#: templates/otp_download.html:28
+msgid "OTP Code (8 characters)"
+msgstr ""
+
+#: templates/otp_download.html:34
+msgid "Download Profile"
+msgstr ""
+
+#: templates/otp_download.html:40
+msgid "OTP code is valid for 24 hours and can only be used once."
+msgstr ""
+
+#: templates/partials/client_list.html:6 vpn_panel/models.py:157
+msgid "Client Name"
+msgstr ""
+
+#: templates/partials/client_list.html:8 vpn_panel/models.py:158
+msgid "IP Address"
+msgstr ""
+
+#: templates/partials/client_list.html:9
+msgid "Created"
+msgstr ""
+
+#: templates/partials/client_list.html:19 vpn_panel/models.py:117
+msgid "Locked"
+msgstr ""
+
+#: templates/partials/client_list.html:21 vpn_panel/models.py:17
+#: vpn_panel/models.py:118 vpn_panel/models.py:133
+msgid "Active"
+msgstr ""
+
+#: templates/partials/client_list.html:31
+#, python-format
+msgid "Are you sure you want to delete %(name)s?"
+msgstr ""
+
+#: templates/partials/client_list.html:42
+msgid "No clients found. Add one on the left!"
+msgstr ""
+
+#: templates/partials/stats.html:6
+msgid "SERVICE STATUS"
+msgstr ""
+
+#: templates/partials/stats.html:23
+msgid "ONLINE CLIENTS"
+msgstr ""
+
+#: templates/partials/stats.html:25
+msgid "Active Session"
+msgid_plural "Active Sessions"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/partials/stats.html:36
+msgid "TOTAL VPN TRAFFIC"
+msgstr ""
+
+#: templates/partials/stats.html:57
+msgid "INTERFACE"
+msgstr ""
+
+#: templates/profile_update.html:4
+msgid "Update Profile"
+msgstr ""
+
+#: templates/profile_update.html:13
+msgid "Setup"
+msgstr ""
+
+#: templates/profile_update.html:13
+msgid "Secure Account"
+msgstr ""
+
+#: templates/profile_update.html:15
+msgid ""
+"As a migrated user, please set your email and a permanent password to "
+"continue."
+msgstr ""
+
+#: templates/profile_update.html:29
+msgid "Email Address"
+msgstr ""
+
+#: templates/profile_update.html:40
+msgid "New Permanent Password"
+msgstr ""
+
+#: templates/profile_update.html:51
+msgid "Confirm Password"
+msgstr ""
+
+#: templates/profile_update.html:62
+msgid "Update and Access Dashboard"
+msgstr ""
+
+#: templates/register.html:3
+msgid "Sign Up"
+msgstr ""
+
+#: templates/register.html:14
+msgid "Create"
+msgstr ""
+
+#: templates/register.html:14
+msgid "Account"
+msgstr ""
+
+#: templates/register.html:15
+msgid "Join the Elite Secure Network"
+msgstr ""
+
+#: templates/register.html:67
+msgid "Already part of the network?"
+msgstr ""
+
+#: templates/register.html:68
+msgid "Login Gateway"
+msgstr ""
+
+#: vpn_panel/admin.py:63
+msgid "Total Members"
+msgstr ""
+
+#: vpn_panel/admin.py:69
+msgid "Online Users"
+msgstr ""
+
+#: vpn_panel/admin.py:86
+msgid "Extend 30 Days"
+msgstr ""
+
+#: vpn_panel/admin.py:95
+#, python-format
+msgid "Extended %(count)d users by %(days)d days."
+msgstr ""
+
+#: vpn_panel/admin.py:97
+msgid "Set Infinite Expiry (999 years)"
+msgstr ""
+
+#: vpn_panel/admin.py:102
+#, python-format
+msgid "Set INFINITE expiry for %(count)d users."
+msgstr ""
+
+#: vpn_panel/admin.py:104
+msgid "Sync from System (OpenVPN)"
+msgstr ""
+
+#: vpn_panel/admin.py:107
+#, python-format
+msgid "Sync complete: %(created)d new, %(skipped)d already existed."
+msgstr ""
+
+#: vpn_panel/admin.py:118
+msgid "Personal info"
+msgstr ""
+
+#: vpn_panel/admin.py:119
+msgid "VPN Status"
+msgstr ""
+
+#: vpn_panel/admin.py:120
+msgid "Plan & Payment"
+msgstr ""
+
+#: vpn_panel/admin.py:123
+msgid "Permissions"
+msgstr ""
+
+#: vpn_panel/admin.py:126
+msgid "Important dates"
+msgstr ""
+
+#: vpn_panel/admin.py:174
+#, python-format
+msgid "Error deleting user %(username)s: %(error)s"
+msgstr ""
+
+#: vpn_panel/admin.py:177
+#, python-format
+msgid "Cleaned up %(count)d users without .ovpn files."
+msgstr ""
+
+#: vpn_panel/admin.py:179
+msgid "No users found to clean up."
+msgstr ""
+
+#: vpn_panel/admin.py:186
+#, python-format
+msgid "Sync complete: %(created)d new, %(skipped)d skipped."
+msgstr ""
+
+#: vpn_panel/admin.py:211 vpn_panel/admin.py:377
+#, python-format
+msgid "Started VPN certificate creation for %(username)s in the background."
+msgstr ""
+
+#: vpn_panel/admin.py:213 vpn_panel/admin.py:379
+msgid "Rebuild .ovpn files"
+msgstr ""
+
+#: vpn_panel/admin.py:218 vpn_panel/admin.py:384
+#, python-format
+msgid "Queued rebuild requests for %(count)d .ovpn files."
+msgstr ""
+
+#: vpn_panel/admin.py:225 vpn_panel/admin.py:391
+#, python-format
+msgid "Queued revocation requests for %(count)d certificates."
+msgstr ""
+
+#: vpn_panel/admin.py:229
+msgid "Display Name"
+msgstr ""
+
+#: vpn_panel/admin.py:233
+msgid "VPN IP"
+msgstr ""
+
+#: vpn_panel/admin.py:267
+#, python-format
+msgid "Started OVPN issuance for %(username)s in background."
+msgstr ""
+
+#: vpn_panel/admin.py:281 vpn_panel/admin.py:344 vpn_panel/views.py:265
+msgid "UNLOCKED"
+msgstr ""
+
+#: vpn_panel/admin.py:285
+msgid "OTP"
+msgstr ""
+
+#: vpn_panel/admin.py:286
+msgid "OVPN"
+msgstr ""
+
+#: vpn_panel/admin.py:297
+msgid "Issue OVPN"
+msgstr ""
+
+#: vpn_panel/admin.py:346
+#, python-format
+msgid "Toggled %(username)s to %(status)s successfully."
+msgstr ""
+
+#: vpn_panel/admin.py:361
+msgid "Subscription Details"
+msgstr ""
+
+#: vpn_panel/admin.py:386
+msgid "Revoke certificate"
+msgstr ""
+
+#: vpn_panel/admin.py:399 vpn_panel/models.py:9
+msgid "Full Name"
+msgstr ""
+
+#: vpn_panel/admin.py:403
+msgid "Amount"
+msgstr ""
+
+#: vpn_panel/admin.py:415
+msgid "INFINITE"
+msgstr ""
+
+#: vpn_panel/admin.py:417
+msgid "days"
+msgstr ""
+
+#: vpn_panel/admin.py:419
+msgid "Payment"
+msgstr ""
+
+#: vpn_panel/admin.py:422
+msgid "PAID"
+msgstr ""
+
+#: vpn_panel/admin.py:423
+msgid "EXPIRED/LOCKED"
+msgstr ""
+
+#: vpn_panel/admin.py:425
+msgid "Lock VPN"
+msgstr ""
+
+#: vpn_panel/admin.py:436
+msgid "Account LOCKED 🔒"
+msgstr ""
+
+#: vpn_panel/admin.py:437
+msgid "Your VPN account has been locked by administrator."
+msgstr ""
+
+#: vpn_panel/admin.py:442
+#, python-format
+msgid "Locked %(count)d accounts."
+msgstr ""
+
+#: vpn_panel/admin.py:444
+msgid "Unlock VPN & Add days"
+msgstr ""
+
+#: vpn_panel/admin.py:463
+msgid "UNLOCKED ✅"
+msgstr ""
+
+#: vpn_panel/admin.py:464
+#, python-format
+msgid "VPN account unlocked and received %(days)d additional days of use."
+msgstr ""
+
+#: vpn_panel/admin.py:469
+#, python-format
+msgid "Unlocked and added %(days)d days for %(count)d accounts."
+msgstr ""
+
+#: vpn_panel/admin.py:492
+msgid "Saved server.conf & Restarted OpenVPN successful!"
+msgstr ""
+
+#: vpn_panel/admin.py:493
+msgid "Error server.conf"
+msgstr ""
+
+#: vpn_panel/admin.py:497
+msgid "Saved Template client-common.txt successfully (No restart needed)"
+msgstr ""
+
+#: vpn_panel/admin.py:498
+msgid "Error client-common.txt"
+msgstr ""
+
+#: vpn_panel/admin.py:503
+msgid "Server Configuration & Profile Template"
+msgstr ""
+
+#: vpn_panel/apps.py:7
+msgid "VPN Management"
+msgstr ""
+
+#: vpn_panel/models.py:10
+msgid "Purchase Date"
+msgstr ""
+
+#: vpn_panel/models.py:11
+msgid "Duration (Days)"
+msgstr ""
+
+#: vpn_panel/models.py:12
+msgid "Expiry Date"
+msgstr ""
+
+#: vpn_panel/models.py:13
+msgid "Amount Paid"
+msgstr ""
+
+#: vpn_panel/models.py:18 vpn_panel/models.py:115 vpn_panel/models.py:123
+msgid "Expired"
+msgstr ""
+
+#: vpn_panel/models.py:19
+msgid "Canceled"
+msgstr ""
+
+#: vpn_panel/models.py:20
+msgid "Demo (3 days)"
+msgstr ""
+
+#: vpn_panel/models.py:127
+msgid "Connected"
+msgstr ""
+
+#: vpn_panel/models.py:130
+msgid "Locked (System)"
+msgstr ""
+
+#: vpn_panel/models.py:132
+msgid "Locked (DB)"
+msgstr ""
+
+#: vpn_panel/models.py:159
+msgid "Is Locked"
+msgstr ""
+
+#: vpn_panel/models.py:160
+msgid "Has OVPN File"
+msgstr ""
+
+#: vpn_panel/tasks.py:118
+msgid "Your VPN account has expired"
+msgstr ""
+
+#: vpn_panel/tasks.py:119
+#, python-format
+msgid ""
+"Hello %(name)s,\n"
+"\n"
+"Your VPN account expired on %(date)s. Please renew to continue using our "
+"service.\n"
+"\n"
+"Best regards,\n"
+"ShieldCall VN Team"
+msgstr ""
+
+#: vpn_panel/tasks.py:136
+msgid "Account Expired"
+msgstr ""
+
+#: vpn_panel/tasks.py:137
+#, python-format
+msgid "Account %(username)s has expired. Please renew now!"
+msgstr ""
+
+#: vpn_panel/views.py:67
+msgid "Invalid data or passwords do not match"
+msgstr ""
+
+#: vpn_panel/views.py:144
+msgid "File not found"
+msgstr ""
+
+#: vpn_panel/views.py:160
+msgid "Invalid or expired OTP code."
+msgstr ""
+
+#: vpn_panel/views.py:191
+#, python-format
+msgid "OTP Code for %(username)s: %(code)s"
+msgstr ""
+
+#: vpn_panel/views.py:197
+msgid "Services restarted successfully."
+msgstr ""
+
+#: vpn_panel/views.py:220
+msgid "New account created successfully!"
+msgstr ""
+
+#: vpn_panel/views.py:238
+#, python-format
+msgid "Account %(username)s deleted successfully."
+msgstr ""
+
+#: vpn_panel/views.py:266
+#, python-format
+msgid "Account %(username)s %(status)s."
+msgstr ""
+
+#: vpn_project/settings.py:53
+msgid "OpenVPN Manager"
+msgstr ""
+
+#: vpn_project/settings.py:54
+msgid "OpenVPN Manager Admin"
+msgstr ""
+
+#: vpn_project/settings.py:64
+msgid "Back to Main Site"
+msgstr ""
+
+#: vpn_project/settings.py:67
+msgid "User Home"
+msgstr ""
+
+#: vpn_project/settings.py:74
+msgid "VPN Operations"
+msgstr ""
+
+#: vpn_project/settings.py:83
+msgid "Manage Subscriptions"
+msgstr ""
+
+#: vpn_project/settings.py:88
+msgid "User Accounts"
+msgstr ""
+
+#: vpn_project/settings.py:93
+msgid "VPN Client List"
+msgstr ""
+
+#: vpn_project/settings.py:100
+msgid "Monitoring & Logs"
+msgstr ""
+
+#: vpn_project/settings.py:104
+msgid "Live Logs"
+msgstr ""
+
+#: vpn_project/settings.py:109
+msgid "Usage History"
+msgstr ""
+
+#: vpn_project/settings.py:114
+msgid "Traffic Snapshots"
+msgstr ""
+
+#: vpn_project/settings.py:121
+msgid "System Configuration"
+msgstr ""
+
+#: vpn_project/settings.py:125
+msgid "VPN Config (Server)"
+msgstr ""
+
+#: vpn_project/settings.py:130
+msgid "General Settings"
+msgstr ""
+
+#: vpn_project/settings.py:135
+msgid "OTP Codes"
+msgstr ""
+
+#: vpn_project/settings.py:234
+msgid "Vietnamese"
+msgstr ""
+
+#: vpn_project/settings.py:235
+msgid "English"
+msgstr ""
