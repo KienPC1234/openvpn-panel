@@ -1,73 +1,145 @@
 {% extends 'base.html' %}
-{% load static i18n crispy_forms_tags %}
-
-{% block title %}{% translate "Verify Email" %} - {{ site_name }}{% endblock %}
+{% block title %}Xác thực Email | VPN Manager{% endblock %}
 
 {% block content %}
-<div class="fixed inset-0 min-h-screen flex w-full">
-    <!-- Left Pane - Form -->
-    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-950 relative z-10">
-        
-        <div class="w-full max-w-md backdrop-blur-3xl bg-gray-900/50 p-10 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden">
-            <!-- Decorative blur -->
-            <div class="absolute -top-32 -right-32 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
-            
-            <div class="mb-10 text-center relative z-10">
-                <div class="inline-flex p-3 rounded-2xl bg-blue-500/10 mb-6">
-                    <span class="material-symbols-outlined text-4xl text-blue-500">mark_email_read</span>
-                </div>
-                <h2 class="text-3xl font-black text-white tracking-tight leading-tight">{% translate "Verify your email" %}</h2>
-                <p class="text-gray-400 mt-3 text-sm">{% translate "We've sent a 6-digit verification code to your email address. It expires in 10 minutes." %}</p>
-            </div>
+<div class="min-h-screen flex">
+    <!-- LEFT: Visual Panel -->
+    <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#060610] flex-col justify-center px-16">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/4 left-0 w-[700px] h-[700px] bg-blue-600/15 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-0 right-0 w-[400px] h-[400px] bg-cyan-700/10 rounded-full blur-[100px]"></div>
+            <div class="absolute inset-0 opacity-[0.025]" style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:48px 48px;"></div>
+        </div>
+        <div class="relative z-10">
+            <div class="text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">Xác thực an toàn</div>
+            <h2 class="text-5xl font-black text-white leading-tight tracking-tight mb-6">
+                Gần xong<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">rồi!</span>
+            </h2>
+            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">Bước xác thực email đảm bảo tài khoản của bạn được bảo vệ và ngăn chặn đăng ký trái phép.</p>
 
-            <form method="post" class="space-y-6 relative z-10">
-                {% csrf_token %}
-                
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{% translate "Confirmation Code" %}</label>
-                    <div class="relative group">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 material-symbols-outlined transition-colors group-focus-within:text-blue-500">password</span>
-                        <input type="text" name="otp" required maxlength="6" class="w-full bg-gray-950 border border-gray-800 text-white text-sm rounded-xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-mono tracking-[0.5em] text-center" placeholder="123456" autocomplete="off">
+            <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-gift text-green-400 text-sm"></i>
                     </div>
+                    <span class="text-white font-bold text-sm">Phần thưởng chờ bạn</span>
                 </div>
-
-                <div class="pt-4">
-                    <button type="submit" class="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
-                        {% translate "Verify Email" %}
-                    </button>
-                </div>
-            </form>
-            
-            <div class="mt-8 text-center text-sm font-medium relative z-10">
-                <span class="text-gray-500">{% translate "Didn't receive the email?" %}</span>
-                <a href="{% url 'register' %}" class="text-blue-400 hover:text-blue-300 ml-1 transition-colors">{% translate "Try registering again" %}</a>
+                <p class="text-gray-500 text-sm">Sau khi xác thực thành công, tài khoản sẽ được kích hoạt ngay với <span class="text-green-400 font-bold">3 ngày dùng thử MIỄN PHÍ</span>.</p>
             </div>
         </div>
     </div>
 
-    <!-- Right Pane - Visual -->
-    <div class="hidden lg:block lg:w-1/2 relative overflow-hidden bg-[#0a0a0f]">
-        <!-- Complex Abstract Background -->
-        <div class="absolute inset-0 z-0">
-            <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-pulse"></div>
-            <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50"></div>
-            
-            <!-- Grid Pattern overlay -->
-            <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px); background-size: 40px 40px;"></div>
-        </div>
-        
-        <div class="relative z-10 h-full flex flex-col justify-center px-24">
-            <div class="text-blue-500 font-bold uppercase tracking-[0.2em] mb-4 text-xs">{% translate "Secure System" %}</div>
-            <h1 class="text-6xl font-black text-white leading-[1.1] tracking-tighter mb-8">
-                {% translate "Enterprise-grade" %}<br>
-                <span class="text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-purple-400">
-                    {% translate "security" %}
-                </span>
-            </h1>
-            <p class="text-gray-400 text-lg max-w-md leading-relaxed">
-                {% translate "We verify your email to ensure the highest level of security for your account and to prevent unauthorized access." %}
-            </p>
+    <!-- RIGHT: Form Panel -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 bg-gray-950">
+        <div class="w-full max-w-md">
+
+            <!-- Icon -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-600/10 border border-blue-500/20 mb-4 relative">
+                    <i class="fas fa-envelope-open-text text-4xl text-blue-400"></i>
+                    <span class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check text-[9px] text-white"></i>
+                    </span>
+                </div>
+                <h1 class="text-2xl font-black tracking-tight text-white">Xác thực Email</h1>
+                <p class="text-gray-500 mt-1 text-sm">Chúng tôi đã gửi mã 6 chữ số đến</p>
+                {% if email %}
+                <p class="text-blue-400 font-bold text-sm mt-0.5">{{ email }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Card -->
+            <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
+
+                {% if error %}
+                <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 mb-6">
+                    <i class="fas fa-exclamation-triangle shrink-0"></i>
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4 text-center">Nhập mã xác thực OTP</label>
+                        <!-- 6 Digit boxes -->
+                        <div class="flex gap-2 justify-center" id="otp-boxes">
+                            <input type="text" maxlength="1" class="otp-digit w-11 h-13 bg-gray-950 border-2 border-gray-700 rounded-xl text-white text-2xl font-black text-center focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all" inputmode="numeric" style="height:3.25rem">
+                            <input type="text" maxlength="1" class="otp-digit w-11 h-13 bg-gray-950 border-2 border-gray-700 rounded-xl text-white text-2xl font-black text-center focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all" inputmode="numeric" style="height:3.25rem">
+                            <input type="text" maxlength="1" class="otp-digit w-11 h-13 bg-gray-950 border-2 border-gray-700 rounded-xl text-white text-2xl font-black text-center focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all" inputmode="numeric" style="height:3.25rem">
+                            <input type="text" maxlength="1" class="otp-digit w-11 h-13 bg-gray-950 border-2 border-gray-700 rounded-xl text-white text-2xl font-black text-center focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all" inputmode="numeric" style="height:3.25rem">
+                            <input type="text" maxlength="1" class="otp-digit w-11 h-13 bg-gray-950 border-2 border-gray-700 rounded-xl text-white text-2xl font-black text-center focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all" inputmode="numeric" style="height:3.25rem">
+                            <input type="text" maxlength="1" class="otp-digit w-11 h-13 bg-gray-950 border-2 border-gray-700 rounded-xl text-white text-2xl font-black text-center focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all" inputmode="numeric" style="height:3.25rem">
+                        </div>
+                        <input type="hidden" name="otp" id="otp-value">
+
+                        <p class="text-center text-gray-600 text-xs mt-3">
+                            <i class="fas fa-clock mr-1"></i>Mã có hiệu lực trong
+                            <span id="countdown" class="text-gray-400 font-bold">10:00</span>
+                        </p>
+                    </div>
+
+                    <button type="submit" id="verify-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        <span>XÁC THỰC EMAIL</span>
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-5 border-t border-gray-800 text-center">
+                    <p class="text-gray-600 text-sm">Không nhận được email?</p>
+                    <a href="{% url 'register' %}" class="text-blue-400 hover:text-blue-300 text-sm font-bold transition-colors mt-1 inline-block">
+                        <i class="fas fa-redo text-xs mr-1"></i>Đăng ký lại
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+const digits = document.querySelectorAll('.otp-digit');
+const otpValue = document.getElementById('otp-value');
+
+function updateOTP() {
+    const val = Array.from(digits).map(d => d.value).join('');
+    otpValue.value = val;
+    if (val.length === 6) {
+        setTimeout(() => document.getElementById('verify-btn').click(), 100);
+    }
+}
+
+digits.forEach((d, i) => {
+    d.addEventListener('input', e => {
+        e.target.value = e.target.value.replace(/\D/g, '');
+        if (e.target.value && i < digits.length - 1) digits[i+1].focus();
+        updateOTP();
+    });
+    d.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !e.target.value && i > 0) digits[i-1].focus();
+    });
+    d.addEventListener('paste', e => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+        pasted.split('').forEach((c, j) => { if (digits[j]) digits[j].value = c; });
+        digits[Math.min(pasted.length, 5)].focus();
+        updateOTP();
+    });
+});
+
+// Countdown
+let seconds = 600;
+const countdownEl = document.getElementById('countdown');
+const timer = setInterval(() => {
+    seconds--;
+    if (seconds <= 0) { clearInterval(timer); countdownEl.textContent = '00:00'; countdownEl.classList.add('text-red-400'); return; }
+    const m = Math.floor(seconds/60).toString().padStart(2,'0');
+    const s = (seconds%60).toString().padStart(2,'0');
+    countdownEl.textContent = `${m}:${s}`;
+    if (seconds < 60) countdownEl.className = 'text-orange-400 font-bold';
+}, 1000);
+
+digits[0].focus();
+</script>
 {% endblock %}

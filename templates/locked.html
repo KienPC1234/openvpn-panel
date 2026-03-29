@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VPN Locked - OpenVPN Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="{% static 'vendor/tailwind/tailwind.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/font-noto-sans-vi/font.css' %}">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Outfit', sans-serif; background: #020617; }
+        body { font-family: 'Noto Sans VN', 'Outfit', sans-serif; background: #020617; }
         .glass {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(20px);
@@ -24,12 +24,66 @@
             z-index: -1;
             filter: blur(80px);
         }
+        /* Fix scrolling */
+        html, body { 
+            height: auto !important; 
+            min-height: 100vh !important;
+            overflow-y: auto !important; 
+            -webkit-overflow-scrolling: touch;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    {% load i18n %}
     <!-- Background Decoration -->
     <div class="gradient-blob -top-24 -left-24"></div>
     <div class="gradient-blob -bottom-24 -right-24" style="background: radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, transparent 70%);"></div>
+
+    <!-- Language Switcher -->
+    <div class="absolute top-6 right-6 z-50">
+        <div class="relative group">
+            <button class="glass px-4 py-2 rounded-xl text-xs font-bold text-gray-400 flex items-center gap-2 border border-white/5">
+                <i class="fas fa-globe text-blue-500"></i>
+                {% get_current_language as CURRENT_LANG %}{{ CURRENT_LANG|upper }}
+            </button>
+            <div class="absolute right-0 mt-2 w-32 bg-gray-900 border border-gray-800 rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                {% get_available_languages as LANGUAGES %}
+                {% for lang in LANGUAGES %}
+                    <form action="{% url 'set_language' %}" method="post">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                        <input name="language" type="hidden" value="{{ lang.0 }}">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-[10px] hover:bg-white/5 {% if lang.0 == CURRENT_LANG %}text-blue-500{% else %}text-gray-400{% endif %}">
+                            {{ lang.1 }}
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Language Switcher -->
+    <div class="absolute top-6 right-6 z-50">
+        <div class="relative group">
+            <button class="glass px-4 py-2 rounded-xl text-xs font-bold text-gray-400 flex items-center gap-2 border border-white/5">
+                <i class="fas fa-globe text-blue-500"></i>
+                {% get_current_language as CURRENT_LANG %}{{ CURRENT_LANG|upper }}
+            </button>
+            <div class="absolute right-0 mt-2 w-32 bg-gray-900 border border-gray-800 rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                {% get_available_languages as LANGUAGES %}
+                {% for lang in LANGUAGES %}
+                    <form action="{% url 'set_language' %}" method="post">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                        <input name="language" type="hidden" value="{{ lang.0 }}">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-[10px] hover:bg-white/5 {% if lang.0 == CURRENT_LANG %}text-blue-500{% else %}text-gray-400{% endif %}">
+                            {{ lang.1 }}
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
     <div class="glass max-w-lg w-full rounded-[2.5rem] p-8 md:p-12 text-center animate-in fade-in zoom-in duration-700">
         <!-- Logo -->

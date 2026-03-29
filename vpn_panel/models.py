@@ -31,69 +31,71 @@ class CustomUser(AbstractUser):
     def save(self, *args, **kwargs):
         from .services import VPNService
         
-        # 1. Update Expiry Date
-        if self.purchase_date and self.duration_days:
-            if self.duration_days >= 36500:
-                self.expiry_date = timezone.datetime(2999, 12, 31).date()
-            else:
-                self.expiry_date = self.purchase_date + timedelta(days=self.duration_days)
-        
-        # 2. Determine Status (Auto)
-        today = timezone.now().date()
-        if self.status != 'CANCELED':
-            if self.expiry_date and self.expiry_date < today:
-                self.status = 'EXPIRED'
-            elif self.duration_days == 3:
-                self.status = 'DEMO'
-            else:
-                self.status = 'ACTIVE'
-
-        # 3. Handle Auto Lock/Unlock based on Status
         old_user = CustomUser.objects.filter(pk=self.pk).first()
         is_new = self.pk is None
+        today = timezone.now().date()
+        grace_days = int(VPNService.get_vpn_setting('GRACE_PERIOD_DAYS', '3'))
         
-        # Detect if admin is trying to UNLOCK an expired user
+        # 1. Update Expiry Date if purchase_date/duration_days changed
+        subscription_updated = False
+        if self.purchase_date and self.duration_days is not None:
+            if is_new or (old_user and (old_user.purchase_date != self.purchase_date or old_user.duration_days != self.duration_days)):
+                subscription_updated = True
+                if self.duration_days >= 36500:
+                    self.expiry_date = timezone.datetime(2999, 12, 31).date()
+                else:
+                    self.expiry_date = self.purchase_date + timedelta(days=self.duration_days)
+        
+        # 2. Determine Status and Automatic Locking (Grace Period Aware)
+        # We only auto-unlock if the subscription was just updated or it's a new user
+        # We only auto-lock if its truly expired beyond grace period
+        
+        if self.status != 'CANCELED':
+            if self.expiry_date:
+                if self.expiry_date < (today - timedelta(days=grace_days)):
+                    self.status = 'EXPIRED'
+                    self.is_vpn_enabled = False # Force lock after grace period
+                elif self.expiry_date < today:
+                    self.status = 'EXPIRED'
+                    # We DON'T force lock yet, allowing grace period
+                elif self.duration_days == 3:
+                    self.status = 'DEMO'
+                else:
+                    self.status = 'ACTIVE'
+
+            # Auto-unlock logic
+            if is_new or subscription_updated:
+                # If admin is renewing, we should auto-unlock the user
+                if self.expiry_date and self.expiry_date >= today:
+                    self.is_vpn_enabled = True
+            
+        # 3. Detect Manual Unlock for Expired Users via Admin
+        # If admin toggles is_vpn_enabled to True on an expired user, we give them extension
         if old_user and not old_user.is_vpn_enabled and self.is_vpn_enabled:
-            # If they were expired, give them X days
-            today = timezone.now().date()
-            if self.expiry_date and self.expiry_date < today:
-                # Update duration_days to give +X days from today
-                days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '3'))
-                if not self.purchase_date:
-                    self.purchase_date = today
-                
+             if self.expiry_date and self.expiry_date < today:
+                ext_days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '3'))
+                # Shift duration forward
+                if not self.purchase_date: self.purchase_date = today
                 delta = today - self.purchase_date
-                self.duration_days = delta.days + days
-                # Recalculate expiry_date
+                self.duration_days = delta.days + ext_days
                 self.expiry_date = self.purchase_date + timedelta(days=self.duration_days)
                 self.status = 'ACTIVE'
         
-        # Only auto-disable if REALLY expired and not manually enabled
-        if self.status == 'EXPIRED' and not self.is_vpn_enabled:
-             pass # Already disabled or remains disabled
-        elif self.status in ['ACTIVE', 'DEMO']:
-             # If status is active, ensure it's enabled unless manually handled
-             # (Actually, let's trust the is_vpn_enabled field more)
-             pass
-
         super().save(*args, **kwargs)
 
         # 4. Sync with OpenVPN System (only if status changed)
         if not is_new and old_user:
             if old_user.is_vpn_enabled != self.is_vpn_enabled:
                 mode = "unlock" if self.is_vpn_enabled else "lock"
+                # Sync to Client model as well
                 if hasattr(self, 'vpn_client'):
-                    # Always try to refresh IP before calling firewall toggle
-                    status_map = VPNService.get_client_status_map()
-                    current_ip = status_map.get(self.vpn_client.name)
-                    if current_ip:
-                        # Use update(ip=...) to avoid triggering save() loop if we really want to be safe, 
-                        # but self.vpn_client is a separate model.
-                        self.vpn_client.ip_address = current_ip
-                        self.vpn_client.save(update_fields=['ip_address'])
+                    self.vpn_client.is_locked = not self.is_vpn_enabled
+                    self.vpn_client.save(update_fields=['is_locked'])
                     
-                    ip = self.vpn_client.ip_address or "0.0.0.0"
-                    VPNService.toggle_lock(self.vpn_client.name, ip, mode)
+                    from django.db import transaction
+                    from .tasks import apply_vpn_lock_state
+                    # Execute the task asynchronously ONLY AFTER the current DB transaction commits
+                    transaction.on_commit(lambda: apply_vpn_lock_state.delay(self.vpn_client.name, mode, self.pk))
 
     @property
     def remaining_days(self):
@@ -197,3 +199,16 @@ class Subscription(CustomUser):
         proxy = True
         verbose_name = "Sổ quản lý Gói cước"
         verbose_name_plural = "Sổ quản lý Gói cước"
+
+class Announcement(models.Model):
+    subject = models.CharField(_("Subject"), max_length=255)
+    content = models.TextField(_("Content (HTML supported)"))
+    sent_at = models.DateTimeField(auto_now_add=True)
+    recipients_count = models.IntegerField(default=0)
+    
+    def __str__(self):
+        return self.subject
+        
+    class Meta:
+        verbose_name = "Thông báo Email"
+        verbose_name_plural = "Thông báo Email"

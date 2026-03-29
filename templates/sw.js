@@ -16,17 +16,18 @@ self.addEventListener('push', event => {
     payload = { message: event.data ? event.data.text() : '' };
   }
 
-  const title = payload.title || 'OpenVPN Manager';
+  const title = payload.head || payload.title || 'OpenVPN Manager';
   const body = payload.body || payload.message || 'Bạn có thông báo mới';
   const url = payload.url || '/dashboard/';
   const tag = payload.tag || 'openvpn-push';
-  const icon = payload.icon || '/static/images/logo.png';
+  const icon = payload.icon || '/static/favicon/favicon-96x96.png';
+  const badge = '/static/favicon/favicon-96x96.png';
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
-      badge: '/static/images/logo.png',
+      badge,
       data: { url },
       tag,
       renotify: false,

@@ -53,19 +53,21 @@
     {% for iface in network_stats %}
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex items-center justify-between">
         <div>
-            <div class="text-[10px] text-gray-500 uppercase font-black tracking-[0.1em] mb-1">INTERFACE: {{ iface.name|upper }}</div>
-            <div class="flex gap-4">
+            <div class="text-[10px] text-gray-400 uppercase font-black tracking-[0.1em] mb-1 opacity-60">INTERFACE: {{ iface.name|upper }}</div>
+            <div class="flex flex-col gap-1">
                 <div class="flex items-center gap-2">
-                    <i class="fas fa-download text-green-500 text-[10px]"></i>
-                    <span class="text-sm font-bold">{{ iface.rx }}</span>
+                    <i class="fas fa-download text-green-500 text-[9px]"></i>
+                    <span class="text-base font-black text-white leading-none">{{ iface.speed_rx }}</span>
+                    <span class="text-[9px] text-gray-500 font-medium">/ {{ iface.rx }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <i class="fas fa-upload text-blue-500 text-[10px]"></i>
-                    <span class="text-sm font-bold">{{ iface.tx }}</span>
+                    <i class="fas fa-upload text-blue-500 text-[9px]"></i>
+                    <span class="text-base font-black text-white leading-none">{{ iface.speed_tx }}</span>
+                    <span class="text-[9px] text-gray-500 font-medium">/ {{ iface.tx }}</span>
                 </div>
             </div>
         </div>
-        <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+        <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
             <i class="fas fa-network-wired text-emerald-500"></i>
         </div>
     </div>

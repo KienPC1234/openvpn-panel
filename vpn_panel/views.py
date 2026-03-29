@@ -10,29 +10,199 @@ from .forms import RegistrationForm
 from django.contrib.auth import login as auth_login
 from django.db.models import Q
 from django.contrib import messages
-import secrets, os
+from django.core.mail import send_mail
+import secrets, os, random
 from datetime import timedelta
 from django.utils import timezone
 from .models import Client, CustomUser, OTPCode, Setting
 from .services import VPNService
-import os
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+import os, logging
+from django.utils.translation import gettext as _
 
-class RegisterView(CreateView):
-    model = CustomUser
-    form_class = RegistrationForm
+logger = logging.getLogger(__name__)
+
+
+def _send_register_otp(email, otp_code):
+    """Send OTP email for registration verification."""
+    subject = "Mã xác thực tài khoản VPN Manager"
+    body = f"""Xin chào,
+
+Mã xác thực OTP của bạn là:
+
+    {otp_code}
+
+Mã này có hiệu lực trong 10 phút. Không chia sẻ mã này với bất kỳ ai.
+
+Sau khi xác thực, bạn sẽ nhận được 3 ngày dùng thử miễn phí!
+
+Trân trọng,
+VPN Manager Team
+"""
+    try:
+        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
+        return True
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to send OTP email: {e}")
+        return False
+
+
+class RegisterView(View):
     template_name = 'register.html'
-    success_url = '/dashboard/'
 
-    def form_valid(self, form):
-        user = form.save(commit=False)
-        user.set_password(form.cleaned_data['password'])
-        user.save()
-        # Automatically create VPN client in system and database
-        success, result = VPNService.add_client(user.username)
-        if success:
-            Client.objects.get_or_create(name=result, user=user)
-        auth_login(self.request, user)
-        return redirect(self.success_url)
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+        form = RegistrationForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+        form = RegistrationForm(request.POST)
+
+        # Make email required for registration
+        if not request.POST.get('email', '').strip():
+            form.add_error('email', 'Email là bắt buộc để xác thực tài khoản.')
+
+        if form.is_valid():
+            data = form.cleaned_data
+            email = data['email'].strip().lower()
+
+            # Check username uniqueness
+            if CustomUser.objects.filter(username=data['username']).exists():
+                form.add_error('username', 'Tên đăng nhập này đã được sử dụng.')
+                return render(request, self.template_name, {'form': form})
+
+            # Check email uniqueness
+            if CustomUser.objects.filter(email=email).exists():
+                form.add_error('email', 'Email này đã được đăng ký.')
+                return render(request, self.template_name, {'form': form})
+
+            # Generate 6-digit OTP
+            otp_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+
+            # Store registration data in session (not in DB yet)
+            request.session['pending_registration'] = {
+                'username': data['username'],
+                'password': data['password'],
+                'email': email,
+                'full_name': data.get('full_name', ''),
+                'otp': otp_code,
+                'expires': (timezone.now() + timedelta(minutes=10)).isoformat(),
+            }
+
+            # Send OTP email
+            sent = _send_register_otp(email, otp_code)
+            if not sent:
+                # If email fails, create account anyway (for dev/no-email setups)
+                messages.warning(request, 'Không thể gửi email OTP. Hãy liên hệ quản trị viên.')
+
+            return redirect('verify_register_otp')
+
+        return render(request, self.template_name, {'form': form})
+
+
+class VerifyRegisterOTPView(View):
+    template_name = 'verify_register_otp.html'
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+        reg = request.session.get('pending_registration')
+        if not reg:
+            messages.error(request, 'Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.')
+            return redirect('register')
+        return render(request, self.template_name, {'email': reg.get('email', '')})
+
+    def post(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+
+        reg = request.session.get('pending_registration')
+        if not reg:
+            messages.error(request, 'Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.')
+            return redirect('register')
+
+        otp_input = request.POST.get('otp', '').strip()
+        email = reg.get('email', '')
+
+        # Check expiry
+        from dateutil import parser as dateparser
+        expires = dateparser.parse(reg['expires'])
+        if timezone.now() > expires:
+            del request.session['pending_registration']
+            return render(request, self.template_name, {
+                'email': email,
+                'error': 'Mã OTP đã hết hạn. Vui lòng đăng ký lại.'
+            })
+
+        # Validate OTP
+        if otp_input != reg['otp']:
+            return render(request, self.template_name, {
+                'email': email,
+                'error': f'Mã OTP không đúng. Vui lòng thử lại.'
+            })
+
+        # OTP correct → Create user with 3-day demo
+        try:
+            user = CustomUser(
+                username=reg['username'],
+                email=reg['email'],
+                full_name=reg.get('full_name', ''),
+                purchase_date=timezone.now().date(),
+                duration_days=3,
+                status='DEMO',
+                is_vpn_enabled=True,
+            )
+            user.set_password(reg['password'])
+            user.save()
+
+            # --- Welcome Email ---
+            try:
+                scheme = 'https' if request.is_secure() else 'http'
+                site_url = f"{scheme}://{request.get_host()}"
+                html_content = render_to_string('emails/welcome_email.html', {
+                    'username': user.username,
+                    'password': reg['password'],
+                    'full_name': user.full_name,
+                    'site_url': site_url
+                })
+                send_mail(
+                    subject='Chào mừng tới VPN Panel!',
+                    message=strip_tags(html_content),
+                    from_email=None, 
+                    recipient_list=[user.email],
+                    html_message=html_content,
+                    fail_silently=True
+                )
+            except Exception as e:
+                logger.error(f"Failed to send welcome email: {e}")
+
+            # Create VPN client
+            success, result = VPNService.add_client(user.username)
+            if success:
+                Client.objects.get_or_create(name=result, user=user)
+
+            # Clear session
+            del request.session['pending_registration']
+
+            # Log user in
+            auth_login(request, user)
+            messages.success(request, '🎉 Chào mừng! Tài khoản đã được xác thực. Bạn có 3 ngày dùng thử miễn phí!')
+            return redirect('dashboard')
+
+        except Exception as e:
+            return render(request, self.template_name, {
+                'email': email,
+                'error': f'Có lỗi xảy ra khi tạo tài khoản: {str(e)}'
+            })
 
 class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
@@ -67,6 +237,30 @@ class ProfileUpdateView(LoginRequiredMixin, View):
         user.set_password(password)
         user.requires_profile_update = False
         user.save()
+        
+        # --- Welcome Email ---
+        try:
+            scheme = 'https' if request.is_secure() else 'http'
+            site_url = f"{scheme}://{request.get_host()}"
+            html_content = render_to_string('emails/welcome_email.html', {
+                'username': user.username,
+                'password': password,
+                'full_name': user.full_name,
+                'site_url': site_url
+            })
+            text_content = strip_tags(html_content)
+            
+            send_mail(
+                subject='Chào mừng tới VPN Panel!',
+                message=text_content,
+                from_email=None, 
+                recipient_list=[user.email],
+                html_message=html_content,
+                fail_silently=True
+            )
+            logger.info(f"Welcome email sent to {user.email}")
+        except Exception as e:
+            logger.error(f"Failed to send welcome email: {e}")
         
         # Ensure VPN client exists for the user
         if not hasattr(user, 'vpn_client'):
@@ -289,6 +483,67 @@ class PortalSuccessView(View):
         from django.http import HttpResponse
         return HttpResponse("Blocked", content_type="text/plain")
 
+class PasswordResetRequestView(View):
+    def get(self, request):
+        return render(request, 'password_reset.html')
+
+    def post(self, request):
+        user_input = request.POST.get('user_input')
+        user = CustomUser.objects.filter(Q(username=user_input) | Q(email=user_input)).first()
+        if user and user.email:
+            code = ''.join(secrets.choice("0123456789") for _ in range(6))
+            from django.utils import timezone
+            from datetime import timedelta
+            # Use 1 hour expiry for password reset OTP
+            expires_at = timezone.now() + timedelta(hours=1)
+            OTPCode.objects.create(user=user, code=code, expires_at=expires_at)
+            
+            from django.core.mail import send_mail
+            subject = _("Mã xác minh đổi mật khẩu")
+            message = _("Mã xác minh của bạn là: %(code)s. Mã có hiệu lực trong 1 giờ.") % {"code": code}
+            try:
+                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+                request.session['reset_user_id'] = user.id
+                messages.success(request, "Mã xác minh đã được gửi đến email của bạn.")
+                return redirect('password_reset_verify')
+            except Exception as e:
+                messages.error(request, f"Lỗi gửi mail: {str(e)}")
+        else:
+            messages.error(request, "Không tìm thấy tài khoản hoặc tài khoản chưa đăng ký email.")
+        return render(request, 'password_reset.html')
+
+class PasswordResetVerifyView(View):
+    def get(self, request):
+        if 'reset_user_id' not in request.session:
+            return redirect('password_reset')
+        return render(request, 'password_reset_verify.html')
+
+    def post(self, request):
+        user_id = request.session.get('reset_user_id')
+        otp_code = request.POST.get('otp')
+        password = request.POST.get('password')
+        confirm = request.POST.get('confirm_password')
+
+        if not user_id: return redirect('password_reset')
+        
+        user = CustomUser.objects.get(pk=user_id)
+        otp = OTPCode.objects.filter(user=user, code=otp_code, is_used=False, expires_at__gt=timezone.now()).first()
+        
+        if not otp:
+            messages.error(request, "Mã xác minh không hợp lệ hoặc đã hết hạn.")
+        elif password != confirm:
+            messages.error(request, "Mật khẩu không khớp.")
+        else:
+            user.set_password(password)
+            user.save()
+            otp.is_used = True
+            otp.save()
+            del request.session['reset_user_id']
+            messages.success(request, "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.")
+            return redirect('login')
+            
+        return render(request, 'password_reset_verify.html')
+
 class AdminServiceLogView(LoginRequiredMixin, StaffRequiredMixin, View):
     def get(self, request):
         from django.contrib import admin
@@ -300,5 +555,71 @@ class AdminServiceLogView(LoginRequiredMixin, StaffRequiredMixin, View):
 
 class AdminServiceLogContent(LoginRequiredMixin, StaffRequiredMixin, View):
     def get(self, request):
-        logs = VPNService.get_service_logs(lines=100)
-        return HttpResponse(f"<pre class='font-mono text-sm text-blue-400 dark:text-blue-300 whitespace-pre-wrap leading-relaxed m-0'>{logs}</pre>")
+        import re
+        lines = int(request.GET.get('lines', 100))
+        service = request.GET.get('service', 'openvpn')
+        raw_logs = VPNService.get_service_logs(service=service, lines=lines)
+        
+        def colorize(line):
+            # Service Name indicator (for OpenVPN)
+            line = re.sub(r'(openvpn\[\d+\]:)', r'<span class="text-indigo-600 dark:text-indigo-400 font-medium">\1</span>', line)
+            
+            # Timestamps
+            line = re.sub(r'^(\d{2}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2})', r'<span class="text-gray-500">\1</span>', line) # Custom formats
+            line = re.sub(r'^([A-Z][a-z]{2}\s+\d+\s+\d{2}:\d{2}:\d{2})', r'<span class="text-gray-500 dark:text-gray-400">\1</span>', line) # Syslog format
+            line = re.sub(r'^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d+)', r'<span class="text-gray-500">\1</span>', line) # Celery format
+
+            # IP Addresses (v4)
+            line = re.sub(r'(\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?)', r'<span class="text-blue-600 dark:text-blue-400 font-semibold">\1</span>', line)
+            
+            # Response Codes (HTTP)
+            line = re.sub(r'\" (2\d{2}) ', r'\" <span class="text-green-500">\1</span> ', line)
+            line = re.sub(r'\" (4\d{2}) ', r'\" <span class="text-orange-500">\1</span> ', line)
+            line = re.sub(r'\" (5\d{2}) ', r'\" <span class="text-red-500">\1</span> ', line)
+
+            # Levels
+            line = re.sub(r'\b(INFO|SUCCESS|OK|trusted|Initiated|ESTABLISHED|GET|POST)\b', r'<span class="text-green-600 dark:text-green-500 font-bold">\1</span>', line)
+            line = re.sub(r'\b(WARNING|restarting|soft|reset|timeout)\b', r'<span class="text-yellow-600 dark:text-yellow-500 font-bold">\1</span>', line)
+            line = re.sub(r'\b(error|FAILED|cannot|unsupported|Bad|attack|ERROR|CRITICAL)\b', r'<span class="text-red-600 dark:text-red-500 font-bold">\1</span>', line)
+            return line
+
+        formatted_logs = "\n".join([colorize(l) for l in raw_logs.splitlines()])
+        return HttpResponse(f"<pre class='font-mono text-xs text-gray-800 dark:text-gray-300 whitespace-pre-wrap leading-relaxed m-0'>{formatted_logs}</pre>")
+
+class AdminTrafficHistoryAPI(LoginRequiredMixin, StaffRequiredMixin, View):
+    def get(self, request):
+        from django.http import JsonResponse
+        history = VPNService.get_traffic_history(limit=30)
+        return JsonResponse(history, safe=False)
+
+class AdminTestWebPushView(LoginRequiredMixin, StaffRequiredMixin, View):
+    """View to allow admins to trigger a test webpush notification from the console."""
+    def post(self, request):
+        from webpush import send_user_notification
+        import json
+        
+        # Try JSON first (for fetch requests from console)
+        try:
+            data = json.loads(request.body)
+            head = data.get('head', 'Test Notification 🔔')
+            body = data.get('body', 'This is a test notification triggered from backend.')
+        except:
+             # Fallback to POST parameters
+             head = request.POST.get('head', 'Test Notification 🔔')
+             body = request.POST.get('body', 'This is a test notification triggered from backend.')
+
+        payload = {
+            "head": head,
+            "body": body,
+            "icon": "/static/images/logo.png"
+        }
+        
+        logger.info(f"Admin {request.user.username} triggered a test webpush to themselves.")
+        
+        try:
+            # Send notification to the current logged-in user
+            send_user_notification(user=request.user, payload=payload, ttl=3600)
+            return HttpResponse("WebPush sent successfully! check your desktop/phone.", status=200)
+        except Exception as e:
+            logger.error(f"Failed to send admin test webpush: {str(e)}")
+            return HttpResponse(f"Error: {str(e)}", status=500)

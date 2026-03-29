@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db import models
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group, User
 from django.utils.translation import gettext_lazy as _
@@ -9,11 +10,17 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.conf import settings
 from django.db.models import Sum
-from .models import CustomUser, Client, UsageLog, Setting, TrafficSnapshot, OTPCode, VPNConfig, Subscription
+from .models import CustomUser, Client, UsageLog, Setting, TrafficSnapshot, OTPCode, VPNConfig, Subscription, Announcement
 from .services import VPNService
 from django.utils import timezone
+from .tasks import send_bulk_announcement
 from datetime import timedelta, date
 from unfold.admin import ModelAdmin, TabularInline
+from django.utils.translation import activate, get_language
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+import secrets, string
 
 # Unregister unwanted models to declutter
 admin.site.unregister(Group)
@@ -108,16 +115,15 @@ def sync_users_action(modeladmin, request, queryset):
 
 @admin.register(CustomUser)
 class CustomUserAdmin(ModelAdmin):
-    # Fieldsets for Unfold ModelAdmin
     fieldsets = (
-        (None, {'fields': ('username', 'password', 'email', 'full_name', 'status', 'is_vpn_enabled')}),
+        (None, {'fields': ('username', 'email', 'full_name', 'status', 'is_vpn_enabled', 'password_reset_link')}),
         (_('Gói cước & Thanh toán'), {
             'fields': ('purchase_date', 'duration_days', 'expiry_date', 'balance'),
             'classes': ('wide',),
         }),
         (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
     )
-    readonly_fields = ('expiry_date', 'is_vpn_enabled')
+    readonly_fields = ('expiry_date', 'is_vpn_enabled', 'password_reset_link')
     list_display = ('username', 'display_name', 'get_client_ip', 'real_status', 'vpn_actions')
     list_filter = ('status', 'is_staff', 'purchase_date')
     search_fields = ('username', 'full_name', 'email')
@@ -175,13 +181,48 @@ class CustomUserAdmin(ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         is_new = obj.pk is None
-        # Capture old status if not new
+        old_email = ""
         old_vpn_enabled = None
+        
         if not is_new:
-            old_vpn_enabled = CustomUser.objects.get(pk=obj.pk).is_vpn_enabled
+            old_inst = CustomUser.objects.get(pk=obj.pk)
+            old_email = old_inst.email or ""
+            old_vpn_enabled = old_inst.is_vpn_enabled
 
         super().save_model(request, obj, form, change)
         
+        # Scenario: Admin updates email for a user with NO email
+        if not is_new and not old_email and obj.email:
+            # Generate random password
+            alphabet = string.ascii_letters + string.digits
+            new_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+            obj.set_password(new_password)
+            obj.save(update_fields=['password'])
+            
+            # Send welcome email
+            try:
+                scheme = 'https' if request.is_secure() else 'http'
+                site_url = f"{scheme}://{request.get_host()}"
+                
+                html_content = render_to_string('emails/welcome_email.html', {
+                    'username': obj.username,
+                    'password': new_password,
+                    'full_name': obj.full_name or obj.username,
+                    'site_url': site_url
+                })
+                
+                send_mail(
+                    subject='Chào mừng tới VPN Panel!',
+                    message=strip_tags(html_content),
+                    from_email=None, 
+                    recipient_list=[obj.email],
+                    html_message=html_content,
+                    fail_silently=True
+                )
+                messages.success(request, f"Đã gửi email thông tin tài khoản (với mật khẩu tự động: {new_password}) tới {obj.email}")
+            except Exception as e:
+                messages.error(request, f"Lỗi gửi email chào mừng: {str(e)}")
+
         # If toggled or new, sync with system
         if is_new or old_vpn_enabled != obj.is_vpn_enabled:
             if hasattr(obj, 'vpn_client'):
@@ -262,6 +303,13 @@ class CustomUserAdmin(ModelAdmin):
             
         return redirect(request.META.get('HTTP_REFERER', 'admin:vpn_panel_customuser_changelist'))
 
+    @admin.display(description='Hành động mật khẩu')
+    def password_reset_link(self, obj):
+        if obj.pk:
+            url = reverse('admin:vpn_password_change', args=[obj.pk])
+            return mark_safe(f'<a href="{url}" class="px-4 py-2 bg-primary-600 text-white rounded-lg font-bold no-underline inline-flex items-center gap-2 hover:bg-primary-700 transition-colors"><span class="material-symbols-outlined text-sm">lock_reset</span> Đổi mật khẩu ngay</a>')
+        return "---"
+
     @admin.display(description='Hành động')
     def vpn_actions(self, obj):
         has_ovpn = hasattr(obj, 'vpn_client') and obj.vpn_client.has_ovpn_file
@@ -283,6 +331,7 @@ class CustomUserAdmin(ModelAdmin):
                     <a class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 no-underline" href="{otp_url}">🔑 OTP</a>
                     <a class="px-2 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 no-underline" href="{download_url}">📥 OVPN</a>
                     <a class="px-2 py-1 {lock_btn_color} text-white rounded text-xs no-underline" href="{lock_url}">{lock_btn_text}</a>
+                    <a class="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 no-underline" href="{reverse('admin:vpn_password_change', args=[obj.pk])}">🔑 Pass</a>
                 </div>
             ''')
         else:
@@ -301,6 +350,7 @@ class CustomUserAdmin(ModelAdmin):
         custom_urls = [
             path('<path:user_id>/toggle-lock/', self.admin_site.admin_view(self.toggle_vpn_lock), name='vpn_toggle_lock'),
             path('<path:user_id>/issue-ovpn/', self.admin_site.admin_view(self.issue_ovpn_for_user), name='vpn_issue_ovpn'),
+            path('<path:user_id>/password-change/', self.admin_site.admin_view(self.admin_password_change_view), name='vpn_password_change'),
             path('global-reset/', self.admin_site.admin_view(self.global_reset_rules), name='vpn_global_reset'),
             path('cleanup-no-ovpn/', self.admin_site.admin_view(self.cleanup_no_ovpn_users), name='vpn_cleanup_no_ovpn'),
         ]
@@ -333,9 +383,25 @@ class CustomUserAdmin(ModelAdmin):
         user.save()
         
         action_name = "KHÓA" if current_state else "MỞ KHÓA"
-        
         messages.success(request, f"Đã {action_name} thành công tài khoản {user.username}.")
-        return redirect(request.META.get('HTTP_REFERER', 'admin:vpn_panel_customuser_changelist'))
+        return redirect(request.META.get('HTTP_REFERER', 'admin:index'))
+    def admin_password_change_view(self, request, user_id):
+        user = CustomUser.objects.get(pk=user_id)
+        if request.method == 'POST':
+            new_password = request.POST.get('password')
+            if new_password:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, f"Đã đổi mật khẩu cho {user.username} thành công.")
+                return redirect('admin:vpn_panel_customuser_changelist')
+        
+        context = {
+            **self.admin_site.each_context(request),
+            'title': f'Đổi mật khẩu: {user.username}',
+            'target_user': user,
+            'opts': self.model._meta, # Added to fix KeyError in Unfold template
+        }
+        return TemplateResponse(request, "admin/password_change.html", context)
 
 from django.db.models import Sum
 from django.utils.formats import number_format
@@ -420,22 +486,14 @@ class SubscriptionAdmin(ModelAdmin):
 
     @admin.action(description='Khóa VPN')
     def lock_vpn_action(self, request, queryset):
-        from webpush import send_user_notification
         for user in queryset:
             user.is_vpn_enabled = False
             user.save()
-            if hasattr(user, 'vpn_client'):
-                VPNService.toggle_lock(user.vpn_client.name, user.vpn_client.ip_address or "0.0.0.0", "lock")
-            
-            # Send Push
-            payload = {"head": "Tài khoản ĐÃ KHÓA 🔒", "body": "Tài khoản VPN của bạn đã bị khóa bởi quản trị viên.", "icon": "/static/images/logo.png"}
-            send_user_notification(user=user, payload=payload, ttl=3600)
-
-        messages.warning(request, f"Đã khóa {queryset.count()} tài khoản.")
+            # Task handles notification and firewall
+        messages.warning(request, f"Đã gửi yêu cầu khóa {queryset.count()} tài khoản.")
 
     @admin.action(description='Mở khóa VPN & Thêm ngày dùng')
     def unlock_vpn_action(self, request, queryset):
-        from webpush import send_user_notification
         days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '3'))
         for user in queryset:
             user.is_vpn_enabled = True
@@ -447,14 +505,9 @@ class SubscriptionAdmin(ModelAdmin):
                 user.expiry_date = timezone.now().date() + timedelta(days=days)
                 
             user.save()
-            if hasattr(user, 'vpn_client'):
-                VPNService.toggle_lock(user.vpn_client.name, user.vpn_client.ip_address or "0.0.0.0", "unlock")
-            
-            # Send Push
-            payload = {"head": "ĐÃ MỞ KHÓA ✅", "body": f"Tài khoản VPN đã mở khóa và tặng thêm {days} ngày sử dụng.", "icon": "/static/images/logo.png"}
-            send_user_notification(user=user, payload=payload, ttl=3600)
+            # Task handles notification and firewall via on_commit in model.save()
         
-        messages.success(request, f"Đã mở khóa và cộng {days} ngày cho {queryset.count()} tài khoản.")
+        messages.success(request, f"Đã gửi yêu cầu mở khóa và cộng {days} ngày cho {queryset.count()} tài khoản.")
 
 @admin.register(Client)
 class ClientAdmin(ModelAdmin):
@@ -496,7 +549,28 @@ class VPNConfigAdmin(ModelAdmin):
 
 @admin.register(Setting)
 class SettingAdmin(ModelAdmin):
-    list_display = ('key', 'value', 'description')
+    list_display = ('key', 'display_value', 'description')
+    search_fields = ('key', 'description', 'value')
+    # Removed list_editable for description as requested
+    
+    @admin.display(description=_("Value"))
+    def display_value(self, obj):
+        if len(obj.value) > 60:
+            return obj.value[:60] + "..."
+        return obj.value
+    
+    @admin.display(description=_("Value"))
+    def display_value(self, obj):
+        if len(obj.value) > 100:
+            return obj.value[:100] + "..."
+        return obj.value
+
+    fieldsets = (
+        (None, {
+            'fields': (('key',), 'value', 'description'),
+            'classes': ('wide',),
+        }),
+    )
 
 @admin.register(OTPCode)
 class OTPCodeAdmin(ModelAdmin):
@@ -517,3 +591,42 @@ class UsageLogAdmin(ModelAdmin):
 @admin.register(TrafficSnapshot)
 class TrafficSnapshotAdmin(ModelAdmin):
     list_display = ('timestamp', 'interface', 'rx_bytes', 'tx_bytes')
+
+from unfold.contrib.forms.widgets import WysiwygWidget
+
+@admin.register(Announcement)
+class AnnouncementAdmin(ModelAdmin):
+    list_display = ('subject', 'sent_at', 'recipients_count', 'send_button')
+    readonly_fields = ('sent_at', 'recipients_count')
+    formfield_overrides = {
+        models.TextField: {
+            "widget": WysiwygWidget,
+        }
+    }
+    actions = ['send_announcement_action']
+
+    @admin.display(description='Hành động')
+    def send_button(self, obj):
+        if obj.pk:
+            url = reverse('admin:vpn_send_announcement', args=[obj.pk])
+            return mark_safe(f'<a href="{url}" class="px-2 py-1 bg-primary-600 text-white rounded text-xs no-underline hover:bg-primary-700">🚀 Gửi ngay</a>')
+        return "---"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('<path:announcement_id>/send/', self.admin_site.admin_view(self.trigger_send_announcement), name='vpn_send_announcement'),
+        ]
+        return custom_urls + urls
+
+    def trigger_send_announcement(self, request, announcement_id):
+        from .tasks import send_bulk_announcement
+        send_bulk_announcement.delay(announcement_id)
+        messages.success(request, "Đã bắt đầu gửi thông báo tới toàn bộ người dùng qua Celery.")
+        return redirect('admin:vpn_panel_announcement_changelist')
+
+    @admin.action(description='Gửi thông báo tới toàn bộ USERS')
+    def send_announcement_action(self, request, queryset):
+        for ann in queryset:
+            send_bulk_announcement.delay(ann.pk)
+        messages.success(request, f"Đã hàng đợi gửi {queryset.count()} thông báo.")

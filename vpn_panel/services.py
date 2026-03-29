@@ -66,10 +66,28 @@ class VPNService:
         return output.strip() if success else "inactive"
 
     @classmethod
+    def format_speed(cls, bytes_per_sec: float) -> str:
+        """Formats bandwidth (bytes/sec) into human readable speed (e.g., 1.5 MB/s)."""
+        if bytes_per_sec < 0: bytes_per_sec = 0
+        power = 1024
+        n = 0
+        power_labels = {0: '', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
+        while bytes_per_sec > power:
+            bytes_per_sec /= power
+            n += 1
+        return f"{bytes_per_sec:.1f} {power_labels[n]}B/s"
+
+    @classmethod
     def get_network_interfaces(cls) -> List[Dict]:
+        """Returns summarized stats for all monitored interfaces, including real-time speed."""
+        from .models import TrafficSnapshot
+        from django.utils import timezone
+        
         interfaces = []
         target_ifaces = cls.get_monitored_interfaces()
+        
         try:
+            # 1. Get current IPs
             success, ip_output = cls.run_command(["ip", "-o", "addr", "show"])
             ip_map = {}
             if success:
@@ -81,25 +99,43 @@ class VPNService:
                             name = parts[1]
                             ip = parts[idx+1]
                             ip_map[name] = ip
-                        except:
-                            pass
+                        except: pass
+            
+            # 2. Get current counters from system
             if Path("/proc/net/dev").exists():
                 with open("/proc/net/dev", "r") as f:
                     lines = f.readlines()
+                
                 for line in lines[2:]:
                     parts = line.split()
                     if len(parts) > 1:
                         name = parts[0].strip(':')
                         if name not in target_ifaces: continue
-                        rx, tx = int(parts[1]), int(parts[9])
+                        
+                        rx_total, tx_total = int(parts[1]), int(parts[9])
+                        
+                        # Calculate Speed (deltas since last snapshot)
+                        last_snap = TrafficSnapshot.objects.filter(interface=name).first()
+                        speed_rx_str = "0 B/s"
+                        speed_tx_str = "0 B/s"
+                        
+                        if last_snap:
+                            dt = (timezone.now() - last_snap.timestamp).total_seconds()
+                            if dt > 0.5: # 0.5s minimum to avoid spikes
+                                speed_rx_str = cls.format_speed((rx_total - last_snap.rx_bytes) / dt)
+                                speed_tx_str = cls.format_speed((tx_total - last_snap.tx_bytes) / dt)
+                        
                         interfaces.append({
                             "name": name,
                             "ip": ip_map.get(name, "No IP"),
-                            "rx": cls.format_bytes(rx),
-                            "tx": cls.format_bytes(tx),
+                            "rx": cls.format_bytes(rx_total),
+                            "tx": cls.format_bytes(tx_total),
+                            "speed_rx": speed_rx_str,
+                            "speed_tx": speed_tx_str,
                         })
         except Exception as e:
-            logger.error(f"Net Stats Error: {e}")
+            logger.error(f"Bandwidth Calc Error: {e}")
+            
         return interfaces
 
     @classmethod
@@ -199,9 +235,8 @@ class VPNService:
 
     @classmethod
     def toggle_lock(cls, client_name: str, ip: str, action: str) -> Tuple[bool, str]:
-        """Sophisticated locking with DNS preservation and verbose logging."""
+        """Sophisticated locking with DNS preservation and strict validation."""
         if not ip or ip == "0.0.0.0":
-            logger.error(f"IP missing for {client_name}")
             return False, "IP not found"
             
         gw = cls.get_vpn_setting('VPN_GATEWAY', '10.8.0.1')
@@ -209,40 +244,42 @@ class VPNService:
         chain = "FORWARD"
         nat_chain = "PREROUTING"
 
-        logger.info(f"--- ATTEMPTING {action.upper()} for {client_name} ({ip}) ---")
-
-        # Check if already locked to avoid double rules
+        # Check if already locked to avoid redundant work/errors
         already_locked, _ = cls.run_command(["sudo", "iptables", "-C", chain, "-s", ip, "-j", "DROP"])
 
         if action == "lock":
-            if already_locked:
-                logger.info(f"{client_name} already locked.")
-                return True, "Already locked"
+            if already_locked: return True, "Already locked"
             
-            # Step 1: DNS
-            cls.run_command(["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
-            cls.run_command(["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
-            # Step 2: DNAT
-            cls.run_command(["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-            cls.run_command(["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-            # Step 3: Block
-            cls.run_command(["sudo", "iptables", "-I", chain, "3", "-s", ip, "-j", "DROP"])
+            steps = [
+                # 1. Allow DNS (UDP/TCP)
+                ["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"],
+                ["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"],
+                # 2. DNAT HTTP/HTTPS to Portal
+                ["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"],
+                ["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"],
+                # 3. Block everything else
+                ["sudo", "iptables", "-I", chain, "3", "-s", ip, "-j", "DROP"]
+            ]
             
-            logger.info(f"Rules applied for user {client_name}")
+            for cmd in steps:
+                success, err = cls.run_command(cmd)
+                if not success:
+                    return False, f"Rule failed: {' '.join(cmd[1:4])}... Error: {err.strip()}"
+            
             cls.save_iptables()
             return True, "Locked"
         else:
-            # Unlock logic - Exhaustive removal
-            max_cleanup = 5
-            for i in range(1, max_cleanup + 1):
-                logger.info(f"Cleanup iteration {i} for {client_name}...")
-                cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
-                cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
-                cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-j", "DROP"])
-                cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-                cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
+            # Unlock logic - Removal is more lenient but we still check the primary DROP rule
+            # Remove DNAT
+            cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
+            cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
+            # Remove DNS Accepts
+            cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
+            cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
             
-            logger.info(f"Rules flushed for user {client_name}")
+            # Remove DROP rule (the most important)
+            success, err = cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-j", "DROP"])
+            
             cls.save_iptables()
             return True, "Unlocked"
 
@@ -318,7 +355,7 @@ class VPNService:
                 parts = line.split(',')
                 # Format: Virtual Address, Common Name, Real Address, Last Ref
                 if len(parts) >= 2 and parts[0].strip() != "Virtual Address":
-                    ip = parts[0].strip()
+                    ip = parts[0].strip().split(',')[0]
                     name = parts[1].strip()
                     if name != "UNDEF":
                         mapping[name] = ip
@@ -330,7 +367,7 @@ class VPNService:
                 # Version 2: CLIENT_LIST,Common Name,Real Address,Virtual Address,...
                 if len(parts) >= 4:
                     name = parts[1].strip()
-                    ip = parts[3].strip()
+                    ip = parts[3].strip().split(',')[0]
                     if name != "UNDEF":
                         mapping[name] = ip
 
@@ -430,20 +467,36 @@ class VPNService:
         return created_count, skipped_count
 
     @classmethod
-    def get_traffic_history(cls, limit: int = 20) -> List[Dict]:
+    def get_traffic_history(cls, limit: int = 20) -> Dict[str, List[Dict]]:
         from .models import TrafficSnapshot
-        # Get snapshots for the primary interface (e.g., eth0)
-        main_ifaces = cls.get_monitored_interfaces()
-        if not main_ifaces: return []
-        main_iface = main_ifaces[0]
-        snapshots = TrafficSnapshot.objects.filter(interface=main_iface).order_by('-timestamp')[:limit]
-        return [
-            {
-                "time": s.timestamp.strftime("%H:%M:%S"),
-                "rx": s.rx_bytes,
-                "tx": s.tx_bytes
-            } for s in reversed(snapshots)
-        ]
+        interfaces = cls.get_monitored_interfaces()
+        if not interfaces: return {}
+        
+        history_by_iface = {}
+        for iface in interfaces:
+            # We need limit + 1 items to calculate deltas
+            db_snapshots = list(TrafficSnapshot.objects.filter(interface=iface).order_by('-timestamp')[:limit+1])
+            db_snapshots.reverse() # chronological: oldest to newest
+            
+            history = []
+            for i in range(1, len(db_snapshots)):
+                prev = db_snapshots[i-1]
+                curr = db_snapshots[i]
+                
+                time_diff = (curr.timestamp - prev.timestamp).total_seconds()
+                if time_diff <= 0: time_diff = 1 # Prevent division by zero
+                
+                rx_speed = max(0, curr.rx_bytes - prev.rx_bytes) / time_diff
+                tx_speed = max(0, curr.tx_bytes - prev.tx_bytes) / time_diff
+                
+                history.append({
+                    "time": curr.timestamp.strftime("%H:%M:%S"),
+                    "rx": rx_speed,
+                    "tx": tx_speed
+                })
+            history_by_iface[iface] = history
+            
+        return history_by_iface
 
     @classmethod
     def read_config(cls, file_path: Path) -> str:
@@ -470,8 +523,19 @@ class VPNService:
             return False
 
     @classmethod
-    def get_service_logs(cls, lines: int = 100) -> str:
-        """Fetches the latest service logs using journalctl."""
-        service_name = cls.get_vpn_setting('SERVICE_NAME', 'openvpn-server@server')
-        success, output = cls.run_command(["sudo", "journalctl", "-u", service_name, "--no-pager", "-n", str(lines)])
-        return output if success else f"Error fetching logs: {output}"
+    def get_service_logs(cls, service: str = 'openvpn', lines: int = 100) -> str:
+        """Fetches latest logs for various services."""
+        if service == 'openvpn':
+            full_service_name = cls.get_vpn_setting('SERVICE_NAME', 'openvpn-server@server')
+            success, output = cls.run_command(["sudo", "journalctl", "-u", full_service_name, "--no-pager", "-n", str(lines)])
+        elif service in ['panel', 'worker', 'beat']:
+             log_file = f"/var/log/vpn_{service}.out.log"
+             # Also try err log if out log is empty or small
+             success, output = cls.run_command(["sudo", "tail", "-n", str(lines), log_file])
+             if not output or len(output.strip()) < 5:
+                 success_err, output_err = cls.run_command(["sudo", "tail", "-n", str(lines), f"/var/log/vpn_{service}.err.log"])
+                 if success_err: output = output_err
+        else:
+            return f"Unknown service: {service}"
+            
+        return output if success else f"Error fetching logs for {service}: {output}"

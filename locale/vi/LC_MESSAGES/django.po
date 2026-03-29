@@ -3,1214 +3,813 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-28 19:38+0700\n"
+"POT-Creation-Date: 2026-03-28 20:16+0700\n"
 "Language: vi\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: templates/admin/index.html:20
-msgid "System is operating stably"
-msgstr "Hệ thống đang hoạt động ổn định"
-
-#: templates/admin/index.html:24
-msgid "Welcome back,"
-msgstr "Chào mừng trở lại,"
-
-#: templates/admin/index.html:29
-msgid ""
-"Monitor traffic, manage users, and optimize your vpn system with "
-"professional real-time analytics panels."
+msgid "Hệ thống đang hoạt động ổn định"
 msgstr ""
-"Giám sát lưu lượng, quản lý người dùng và tối ưu hóa hệ thống VPN của bạn "
-"với các bảng phân tích thời gian thực chuyên nghiệp."
 
-#: templates/admin/index.html:37 vpn_panel/admin.py:57
-msgid "Total Revenue"
-msgstr "Tổng doanh thu"
+msgid "Chào mừng trở lại,"
+msgstr ""
 
-#: templates/admin/index.html:41
-msgid "Manage Subscription"
-msgstr "Quản lý Gói cước"
+msgid "Giám sát lưu lượng, quản lý người dùng và tối ưu hóa hệ thống vpn của bạn với các bảng phân tích thời gian thực chuyên nghiệp."
+msgstr ""
 
-#: templates/admin/index.html:52 templates/admin/index.html:226
-msgid "Update"
-msgstr "Cập nhật"
+msgid "Lợi nhuận tích lũy"
+msgstr ""
 
-#: templates/admin/index.html:56
-msgid "Members"
-msgstr "Thành viên"
+msgid "Quản lý gói cước"
+msgstr ""
 
-#: templates/admin/index.html:61
 msgid "Made with Unfold Studio Patterns"
 msgstr ""
 
-#: templates/admin/index.html:87
-#, python-format
-msgid "+12%% compared to last month"
-msgstr "+12%% so với tháng trước"
+msgid "Biểu đồ lưu lượng truy cập"
+msgstr ""
 
-#: templates/admin/index.html:100
-msgid "Traffic Analytics Chart"
-msgstr "Biểu đồ lưu lượng truy cập"
-
-#: templates/admin/index.html:102
 msgid "Real-time Metrics"
 msgstr "Chỉ số Thời gian thực"
 
-#: templates/admin/index.html:118
-msgid "Quick Management"
-msgstr "Danh mục quản lý nhanh"
-
-#: templates/admin/index.html:161 templates/dashboard.html:222
-#, fuzzy
-#| msgid "Download (RX)"
-msgid "Download (Mbps)"
-msgstr "Tải xuống (RX)"
-
-#: templates/admin/index.html:171 templates/dashboard.html:232
-#, fuzzy
-#| msgid "Upload (TX)"
-msgid "Upload (Mbps)"
-msgstr "Tải lên (TX)"
-
-#: templates/admin/user_manage.html:4
-#, fuzzy
-#| msgid "Quick Management"
-msgid "User Management"
-msgstr "Danh mục quản lý nhanh"
-
-#: templates/admin/user_manage.html:11
-msgid "Network"
+msgid "Danh mục quản lý nhanh"
 msgstr ""
 
-#: templates/admin/user_manage.html:11
-msgid "Personnel"
-msgstr ""
-
-#: templates/admin/user_manage.html:12
-msgid "Provision and manage user access across the VPN infrastructure."
-msgstr ""
-
-#: templates/admin/user_manage.html:16
-#, fuzzy
-#| msgid "Total Members"
-msgid "Total Access Nodes"
-msgstr "Tổng số thành viên"
-
-#: templates/admin/user_manage.html:32
-msgid "New Provisioning"
-msgstr ""
-
-#: templates/admin/user_manage.html:58
-msgid "Create Account"
-msgstr "Tạo tài khoản"
-
-#: templates/admin/user_manage.html:74
-#, fuzzy
-#| msgid "Active Session"
-#| msgid_plural "Active Sessions"
-msgid "Active Directory"
-msgstr "Phiên hoạt động"
-
-#: templates/admin/user_manage.html:82
-#, fuzzy
-#| msgid "Update Profile"
-msgid "User Profile"
-msgstr "Cập nhật hồ sơ"
-
-#: templates/admin/user_manage.html:83
-#, fuzzy
-#| msgid "Secure Access Gateway"
-msgid "Access State"
-msgstr "Cổng truy cập an toàn"
-
-#: templates/admin/user_manage.html:84 templates/dashboard.html:116
-msgid "Plan Info"
-msgstr "Thông tin gói"
-
-#: templates/admin/user_manage.html:85
-msgid "Controls"
-msgstr ""
-
-#: templates/admin/user_manage.html:98
-msgid "No endpoint"
-msgstr ""
-
-#: templates/admin/user_manage.html:106
-#, fuzzy
-#| msgid "Live Logs"
-msgid "Live"
-msgstr "Xem Log Trực Tiếp"
-
-#: templates/admin/user_manage.html:110
-#, fuzzy
-#| msgid "Locked"
-msgid "Blocked"
-msgstr "Đã khóa"
-
-#: templates/admin/user_manage.html:123
-msgid "Days"
-msgstr ""
-
-#: templates/admin/user_manage.html:132
-msgid "Are you sure you want to DELETE this account?"
-msgstr "Bạn có chắc chắn muốn XÓA tài khoản này không?"
-
-#: templates/admin/user_manage.html:146
-msgid "Void Node Directory"
-msgstr ""
-
-#: templates/admin/vpn_config.html:57
-msgid ""
-"Repair fixes status log path in server.conf. Init creates Nginx reverse "
-"proxy config."
-msgstr ""
-"Sửa lỗi giúp chuẩn hóa đường dẫn status log trong server.conf. Init sẽ tạo cấu hình Nginx reverse proxy."
-
-#: templates/base.html:76
-msgid "Download App"
-msgstr "Tải ứng dụng"
-
-#: templates/base.html:77
-msgid "Enter OTP"
-msgstr "Nhập OTP"
-
-#: templates/base.html:79 templates/dashboard.html:4 vpn_project/settings.py:79
-msgid "Dashboard"
-msgstr "Bảng điều khiển"
-
-#: templates/base.html:81
-msgid "Users"
-msgstr "Người dùng"
-
-#: templates/base.html:82
-msgid "Admin"
-msgstr "Quản trị"
-
-#: templates/base.html:88
-msgid "Logout"
-msgstr "Đăng xuất"
-
-#: templates/base.html:92
-msgid "Register"
-msgstr "Đăng ký"
-
-#: templates/base.html:93 templates/login.html:3
-msgid "Login"
-msgstr "Đăng nhập"
-
-#: templates/dashboard.html:56
-#, python-format
-msgid "Welcome, <span class=\"text-blue-500\">%(name)s</span>"
-msgstr "Chào mừng, <span class=\"text-blue-500\">%(name)s</span>"
-
-#: templates/dashboard.html:57
-msgid "Welcome back. This is your personal VPN management portal."
-msgstr "Chào mừng trở lại. Đây là cổng quản lý VPN cá nhân của bạn."
-
-#: templates/dashboard.html:75 templates/locked.html:47
-msgid "Connection Suspended"
-msgstr "Kết nối bị tạm ngưng"
-
-#: templates/dashboard.html:80
-msgid "Action Required: Renew Plan"
-msgstr "Yêu cầu: Gia hạn gói cước"
-
-#: templates/dashboard.html:81
-msgid ""
-"Your VPN access is currently suspended. Please scan the QR code to top up "
-"your balance and restore connectivity."
-msgstr ""
-"Quyền truy cập VPN của bạn hiện đang bị tạm ngưng. Vui lòng quét mã QR để nạp tiền vào số dư và khôi phục kết nối."
-
-#: templates/dashboard.html:88
-msgid "VPN Config"
-msgstr "Cấu hình VPN"
-
-#: templates/dashboard.html:90
-msgid "Your VPN Connection"
-msgstr "Kết nối VPN của bạn"
-
-#: templates/dashboard.html:91
-#, fuzzy
-#| msgid ""
-#| "Download your .ovpn file to start using the VPN. Compatible with all "
-#| "OpenVPN apps."
-msgid ""
-"Download your config file to start using the VPN. Compatible with all "
-"OpenVPN clients."
-msgstr ""
-"Tải xuống tệp .ovpn của bạn để bắt đầu sử dụng VPN. Tương thích với tất cả "
-"các ứng dụng OpenVPN."
-
-#: templates/dashboard.html:97
-msgid "DOWNLOAD CONFIG (.OVPN)"
-msgstr "TẢI CẤU HÌNH (.OVPN)"
-
-#: templates/dashboard.html:100
-msgid "Install App"
-msgstr "Cài đặt ứng dụng"
-
-#: templates/dashboard.html:106
-msgid "Generating config..."
-msgstr "Đang tạo cấu hình..."
-
-#: templates/dashboard.html:120
-msgid "Plan Type"
-msgstr "Loại gói"
-
-#: templates/dashboard.html:124
-msgid "Expiry"
-msgstr "Hết hạn"
-
-#: templates/dashboard.html:125
-msgid "Never"
-msgstr "Vĩnh viễn"
-
-#: templates/dashboard.html:128
-msgid "Balance"
-msgstr "Số dư"
-
-#: templates/dashboard.html:133 vpn_panel/admin.py:412
-msgid "Days Remaining"
-msgstr "Số ngày còn lại"
-
-#: templates/dashboard.html:161
-msgid "Notifications"
-msgstr "Thông báo"
-
-#: templates/dashboard.html:163
-msgid "Get updates on your plan and system maintenance."
-msgstr "Nhận cập nhật về gói cước và bảo trì hệ thống."
-
-#: templates/installer_download.html:4
-msgid "Download Installer"
-msgstr "Tải xuống bộ cài"
-
-#: templates/installer_download.html:12
-msgid "Official Client Software"
-msgstr ""
-
-#: templates/installer_download.html:15 templates/otp_download.html:13
-msgid "Download"
-msgstr "Tải xuống"
-
-#: templates/installer_download.html:18
-msgid ""
-"Get the latest official software optimized for high-speed protocols and "
-"maximum security across all your devices."
-msgstr ""
-
-#: templates/installer_download.html:39
-msgid "Verified"
-msgstr ""
-
-#: templates/installer_download.html:45
-msgid ""
-"Optimized for the latest secure protocols. Highly recommended for stable "
-"tunneling and low-latency performance."
-msgstr ""
-
-#: templates/installer_download.html:49
-#, fuzzy
-#| msgid "Download Profile"
-msgid "Download Package"
-msgstr "Tải xuống cấu hình"
-
-#: templates/installer_download.html:59
-#, fuzzy
-#| msgid "No members found."
-msgid "No installers found."
-msgstr "Không tìm thấy thành viên nào."
-
-#: templates/installer_download.html:60
-msgid "Please contact system administrator for support."
-msgstr ""
-
-#: templates/installer_download.html:72
-msgid "Deployment Guide"
-msgstr ""
-
-#: templates/installer_download.html:74
-msgid "Fast Setup Process"
-msgstr ""
-
-#: templates/installer_download.html:80
-msgid "Initialize"
-msgstr ""
-
-#: templates/installer_download.html:81
-msgid ""
-"Download the appropriate client binary for your operating system and run the "
-"installation wizard."
-msgstr ""
-
-#: templates/installer_download.html:85
-#, fuzzy
-#| msgid "Permissions"
-msgid "Provision"
-msgstr "Quyền hạn"
-
-#: templates/installer_download.html:86
-#, fuzzy
-#| msgid ""
-#| "Use the OTP code to download the profile (.ovpn) and import it into the "
-#| "app."
-msgid ""
-"Use your one-time password to download your unique encryption profile (."
-"ovpn) inside the client app."
-msgstr "Sử dụng mã OTP để tải xuống cấu hình (.ovpn) và nhập vào ứng dụng."
-
-#: templates/installer_download.html:90
-msgid "Connect"
-msgstr "Kết nối"
-
-#: templates/installer_download.html:91
-msgid ""
-"Ignition! Secure the connection and start browsing with enterprise-grade "
-"encrypted tunneling."
-msgstr ""
-
-#: templates/locked.html:7
-msgid "VPN Locked"
-msgstr "VPN bị khóa"
-
-#: templates/locked.html:49 vpn_panel/tasks.py:83
-msgid "Account Suspended"
-msgstr "Tài khoản bị tạm ngưng"
-
-#: templates/locked.html:50
-msgid ""
-"Your plan has expired or has been suspended. Please renew to restore "
-"Internet access."
-msgstr ""
-"Gói của bạn đã hết hạn hoặc bị tạm ngưng. Vui lòng gia hạn để khôi phục truy "
-"cập Internet."
-
-#: templates/locked.html:55
-msgid "Scan QR for quick payment"
-msgstr "Quét mã QR để thanh toán nhanh"
-
-#: templates/locked.html:67
-msgid "Telegram Support"
-msgstr "Hỗ trợ Telegram"
-
-#: templates/locked.html:71
-msgid "Try Reconnecting"
-msgstr "Thử kết nối lại"
-
-#: templates/login.html:28
-msgid "Secure Infrastructure"
-msgstr ""
-
-#: templates/login.html:30
-#, fuzzy
-#| msgid "Total Revenue"
-msgid "Total"
-msgstr "Tổng doanh thu"
-
-#: templates/login.html:31
-msgid "Privacy."
-msgstr ""
-
-#: templates/login.html:36
-msgid ""
-"Enterprise-grade VPN management with lightning fast tunneling protocols."
-msgstr ""
-
-#: templates/login.html:67
-#, fuzzy
-#| msgid "Total Members"
-msgid "Portal Access"
-msgstr "Tổng số thành viên"
-
-#: templates/login.html:68
-msgid "Authorized personnel only. Please verify your identity."
-msgstr ""
-
-#: templates/login.html:75
-msgid "Identifier"
-msgstr ""
-
-#: templates/login.html:79
-#, fuzzy
-#| msgid "Account Suspended"
-msgid "Account handle"
-msgstr "Tài khoản bị tạm ngưng"
-
-#: templates/login.html:88
-msgid "Security Key"
-msgstr ""
-
-#: templates/login.html:89
-msgid "Recovery"
-msgstr ""
-
-#: templates/login.html:104
-msgid "Authentication failed. Access denied."
-msgstr ""
-
-#: templates/login.html:111
-#, fuzzy
-#| msgid "Active Session"
-#| msgid_plural "Active Sessions"
-msgid "Initialize Session"
-msgstr "Phiên hoạt động"
-
-#: templates/login.html:119
-msgid "No clearance?"
-msgstr ""
-
-#: templates/login.html:120
-msgid "Request access"
-msgstr ""
-
-#: templates/otp_download.html:4
-msgid "Download VPN Profile"
-msgstr "Tải cấu hình VPN"
-
-#: templates/otp_download.html:13
-msgid "Profile"
-msgstr "Cấu hình"
-
-#: templates/otp_download.html:14
-msgid ""
-"Enter the OTP code provided by Admin to download your VPN configuration file."
-msgstr "Nhập mã OTP được Admin cung cấp để tải xuống tệp cấu hình VPN của bạn."
-
-#: templates/otp_download.html:28
-msgid "OTP Code (8 characters)"
-msgstr "Mã OTP (8 ký tự)"
-
-#: templates/otp_download.html:34
-msgid "Download Profile"
-msgstr "Tải xuống cấu hình"
-
-#: templates/otp_download.html:40
-msgid "OTP code is valid for 24 hours and can only be used once."
-msgstr "Mã OTP có hiệu lực trong 24 giờ và chỉ có thể sử dụng một lần."
-
-#: templates/partials/client_list.html:6 vpn_panel/models.py:159
-msgid "Client Name"
-msgstr "Tên Client"
-
-#: templates/partials/client_list.html:7 vpn_panel/admin.py:248
-msgid "Status"
-msgstr "Trạng thái"
-
-#: templates/partials/client_list.html:8 vpn_panel/models.py:160
-msgid "IP Address"
-msgstr "Địa chỉ IP"
-
-#: templates/partials/client_list.html:9
-msgid "Created"
-msgstr "Ngày tạo"
-
-#: templates/partials/client_list.html:10 vpn_panel/admin.py:272
-msgid "Actions"
-msgstr "Hành động"
-
-#: templates/partials/client_list.html:19 vpn_panel/models.py:119
-msgid "Locked"
-msgstr "Đã khóa"
-
-#: templates/partials/client_list.html:21 vpn_panel/models.py:17
-#: vpn_panel/models.py:120 vpn_panel/models.py:135
-msgid "Active"
-msgstr "Đang hoạt động"
-
-#: templates/partials/client_list.html:31
-#, python-format
-msgid "Are you sure you want to delete %(name)s?"
-msgstr "Bạn có chắc chắn muốn xóa %(name)s?"
-
-#: templates/partials/client_list.html:42
-msgid "No clients found. Add one on the left!"
-msgstr "Không tìm thấy client nào. Thêm mới ở bên trái!"
-
-#: templates/partials/stats.html:6
-msgid "SERVICE STATUS"
-msgstr "TRẠNG THÁI DỊCH VỤ"
-
-#: templates/partials/stats.html:23
-msgid "ONLINE CLIENTS"
-msgstr "CLIENT TRỰC TUYẾN"
-
-#: templates/partials/stats.html:25
-msgid "Active Session"
-msgid_plural "Active Sessions"
-msgstr[0] "Phiên hoạt động"
-
-#: templates/partials/stats.html:36
-msgid "TOTAL VPN TRAFFIC"
-msgstr "TỔNG LƯU LƯỢNG VPN"
-
-#: templates/partials/stats.html:57
-msgid "INTERFACE"
-msgstr "INTERFACE"
-
-#: templates/partials/stats.html:62
-#, fuzzy
-#| msgid "Download"
-msgid "Down"
-msgstr "Tải xuống"
-
-#: templates/partials/stats.html:67
-msgid "Up"
-msgstr ""
-
-#: templates/profile_update.html:4
-msgid "Update Profile"
-msgstr "Cập nhật hồ sơ"
-
-#: templates/profile_update.html:13
-msgid "Setup"
-msgstr "Thiết lập"
-
-#: templates/profile_update.html:13
-msgid "Secure Account"
-msgstr "Tài khoản an toàn"
-
-#: templates/profile_update.html:15
-msgid ""
-"As a migrated user, please set your email and a permanent password to "
-"continue."
-msgstr ""
-"Là người dùng được chuyển sang, vui lòng đặt email và mật khẩu cố định để "
-"tiếp tục."
-
-#: templates/profile_update.html:29
-msgid "Email Address"
-msgstr "Địa chỉ Email"
-
-#: templates/profile_update.html:40
-msgid "New Permanent Password"
-msgstr "Mật khẩu cố định mới"
-
-#: templates/profile_update.html:51 vpn_panel/forms.py:7 vpn_panel/forms.py:28
-msgid "Confirm Password"
-msgstr "Xác nhận mật khẩu"
-
-#: templates/profile_update.html:62
-msgid "Update and Access Dashboard"
-msgstr "Cập nhật và Truy cập Bảng điều khiển"
-
-#: templates/register.html:3
-msgid "Sign Up"
-msgstr "Đăng ký"
-
-#: templates/register.html:19
-#, fuzzy
-#| msgid "Secure Account"
-msgid "Secure Account Provisioning"
-msgstr "Tài khoản an toàn"
-
-#: templates/register.html:21
-#, fuzzy
-#| msgid "Create Account"
-msgid "Create your"
-msgstr "Tạo tài khoản"
-
-#: templates/register.html:21
-#, fuzzy
-#| msgid "VPN Client List"
-msgid "VPN Identity"
-msgstr "Danh sách Client VPN"
-
-#: templates/register.html:79
-msgid "Already have an account?"
-msgstr "Đã có tài khoản?"
-
-#: templates/register.html:80
-msgid "Sign In"
-msgstr "Đăng nhập"
-
-#: templates/verify_register_otp.html:4 templates/verify_register_otp.html:36
 msgid "Verify Email"
 msgstr "Xác minh Email"
 
-#: templates/verify_register_otp.html:19
 msgid "Verify your email"
 msgstr "Xác minh email của bạn"
 
-#: templates/verify_register_otp.html:20
-msgid ""
-"We've sent a 6-digit verification code to your email address. It expires in "
-"10 minutes."
-msgstr ""
-"Chúng tôi đã gửi mã xác minh 6 chữ số đến địa chỉ email của bạn. Mã sẽ hết hạn sau 10 phút."
+msgid "We've sent a 6-digit verification code to your email address. It expires in 10 minutes."
+msgstr "Chúng tôi đã gửi mã xác minh 6 chữ số đến địa chỉ email của bạn. Mã sẽ hết hạn sau 10 phút."
 
-#: templates/verify_register_otp.html:27
 msgid "Confirmation Code"
 msgstr "Mã xác nhận"
 
-#: templates/verify_register_otp.html:42
 msgid "Didn't receive the email?"
 msgstr "Không nhận được email?"
 
-#: templates/verify_register_otp.html:43
 msgid "Try registering again"
 msgstr "Thử đăng ký lại"
 
-#: templates/verify_register_otp.html:60
 msgid "Secure System"
 msgstr "Hệ thống bảo mật"
 
-#: templates/verify_register_otp.html:62
 msgid "Enterprise-grade"
 msgstr "Tiêu chuẩn doanh nghiệp"
 
-#: templates/verify_register_otp.html:64
 msgid "security"
 msgstr "bảo mật"
 
-#: templates/verify_register_otp.html:68
-msgid ""
-"We verify your email to ensure the highest level of security for your "
-"account and to prevent unauthorized access."
-msgstr ""
-"Chúng tôi xác minh email của bạn để đảm bảo mức độ bảo mật cao nhất cho tài khoản và ngăn chặn truy cập trái phép."
+msgid "We verify your email to ensure the highest level of security for your account and to prevent unauthorized access."
+msgstr "Chúng tôi xác minh email của bạn để đảm bảo mức độ bảo mật cao nhất cho tài khoản và ngăn chặn truy cập trái phép."
 
-#: vpn_panel/admin.py:63
-msgid "Total Members"
-msgstr "Tổng số thành viên"
-
-#: vpn_panel/admin.py:69
-msgid "Online Users"
-msgstr "Người dùng trực tuyến"
-
-#: vpn_panel/admin.py:86
-msgid "Extend 30 Days"
-msgstr "Gia hạn 30 ngày"
-
-#: vpn_panel/admin.py:95
-#, python-format
-msgid "Extended %(count)d users by %(days)d days."
-msgstr "Đã gia hạn %(count)d người dùng thêm %(days)d ngày."
-
-#: vpn_panel/admin.py:97
-msgid "Set Infinite Expiry (999 years)"
-msgstr "Đặt ngày hết hạn vô hạn (999 năm)"
-
-#: vpn_panel/admin.py:102
-#, python-format
-msgid "Set INFINITE expiry for %(count)d users."
-msgstr "Đã đặt hết hạn VÔ HẠN cho %(count)d người dùng."
-
-#: vpn_panel/admin.py:104
-msgid "Sync from System (OpenVPN)"
-msgstr "Đồng bộ từ hệ thống (OpenVPN)"
-
-#: vpn_panel/admin.py:107
-#, python-format
-msgid "Sync complete: %(created)d new, %(skipped)d already existed."
-msgstr "Đồng bộ hoàn tất: %(created)d mới, %(skipped)d đã tồn tại."
-
-#: vpn_panel/admin.py:119
-msgid "Personal info"
+msgid "Tổng Doanh Thu"
 msgstr ""
 
-#: vpn_panel/admin.py:120
-#, fuzzy
-#| msgid "Status"
-msgid "VPN Status"
-msgstr "Trạng thái"
+msgid "Tổng Thành Viên"
+msgstr ""
 
-#: vpn_panel/admin.py:121
-msgid "Plan & Payment"
-msgstr "Gói & Thanh toán"
+msgid "Người Dùng Online"
+msgstr ""
 
-#: vpn_panel/admin.py:124
+msgid "Gói cước & Thanh toán"
+msgstr ""
+
 msgid "Permissions"
 msgstr "Quyền hạn"
 
-#: vpn_panel/admin.py:127
-msgid "Important dates"
-msgstr ""
-
-#: vpn_panel/admin.py:175
-#, python-format
-msgid "Error deleting user %(username)s: %(error)s"
-msgstr "Lỗi xóa người dùng %(username)s: %(error)s"
-
-#: vpn_panel/admin.py:178
-#, python-format
-msgid "Cleaned up %(count)d users without .ovpn files."
-msgstr "Đã dọn dẹp %(count)d người dùng không có tệp .ovpn."
-
-#: vpn_panel/admin.py:180
-msgid "No users found to clean up."
-msgstr "Không có người dùng nào cần dọn dẹp."
-
-#: vpn_panel/admin.py:187
-#, python-format
-msgid "Sync complete: %(created)d new, %(skipped)d skipped."
-msgstr "Đồng bộ hoàn tất: %(created)d mới, %(skipped)d đã bỏ qua."
-
-#: vpn_panel/admin.py:212 vpn_panel/admin.py:378
-#, python-format
-msgid "Started VPN certificate creation for %(username)s in the background."
-msgstr "Đã bắt đầu tạo chứng chỉ VPN cho %(username)s trong nền."
-
-#: vpn_panel/admin.py:214 vpn_panel/admin.py:380
-msgid "Rebuild .ovpn files"
-msgstr "Tạo lại tệp .ovpn"
-
-#: vpn_panel/admin.py:219 vpn_panel/admin.py:385
-#, python-format
-msgid "Queued rebuild requests for %(count)d .ovpn files."
-msgstr "Đã đưa vào hàng chờ yêu cầu tạo lại %(count)d tệp .ovpn."
-
-#: vpn_panel/admin.py:226 vpn_panel/admin.py:392
-#, python-format
-msgid "Queued revocation requests for %(count)d certificates."
-msgstr "Đã đưa vào hàng chờ yêu cầu thu hồi %(count)d chứng chỉ."
-
-#: vpn_panel/admin.py:230
-msgid "Display Name"
-msgstr "Tên hiển thị"
-
-#: vpn_panel/admin.py:234
-msgid "VPN IP"
-msgstr "IP VPN"
-
-#: vpn_panel/admin.py:268
-#, python-format
-msgid "Started OVPN issuance for %(username)s in background."
-msgstr "Đã bắt đầu cấp OVPN cho %(username)s trong nền."
-
-#: vpn_panel/admin.py:282 vpn_panel/admin.py:345 vpn_panel/views.py:371
-msgid "UNLOCKED"
-msgstr "ĐÃ MỞ KHÓA"
-
-#: vpn_panel/admin.py:282 vpn_panel/admin.py:345 vpn_panel/views.py:371
-msgid "LOCKED"
-msgstr "ĐÃ KHÓA"
-
-#: vpn_panel/admin.py:286
-msgid "OTP"
-msgstr "Mã OTP"
-
-#: vpn_panel/admin.py:287
-msgid "OVPN"
-msgstr "Tải OVPN"
-
-#: vpn_panel/admin.py:298
-msgid "Issue OVPN"
-msgstr "Cấp OVPN"
-
-#: vpn_panel/admin.py:347
-#, python-format
-msgid "Toggled %(username)s to %(status)s successfully."
-msgstr "Đã chuyển %(username)s sang %(status)s thành công."
-
-#: vpn_panel/admin.py:362
-msgid "Subscription Details"
-msgstr "Chi tiết gói cước"
-
-#: vpn_panel/admin.py:387
-msgid "Revoke certificate"
-msgstr "Thu hồi chứng chỉ"
-
-#: vpn_panel/admin.py:400 vpn_panel/forms.py:15 vpn_panel/forms.py:35
-#: vpn_panel/models.py:9
 msgid "Full Name"
 msgstr "Họ và tên"
 
-#: vpn_panel/admin.py:404
-msgid "Amount"
-msgstr "Số lượng"
-
-#: vpn_panel/admin.py:416
-msgid "INFINITE"
-msgstr "VÔ CỰC"
-
-#: vpn_panel/admin.py:418
-msgid "days"
-msgstr "ngày"
-
-#: vpn_panel/admin.py:420
-msgid "Payment"
-msgstr "Thanh toán"
-
-#: vpn_panel/admin.py:423
-msgid "PAID"
-msgstr "ĐÃ THANH TOÁN"
-
-#: vpn_panel/admin.py:424
-msgid "EXPIRED/LOCKED"
-msgstr "HẾT HẠN/KHÓA"
-
-#: vpn_panel/admin.py:426
-msgid "Lock VPN"
-msgstr "Khóa VPN"
-
-#: vpn_panel/admin.py:437
-msgid "Account LOCKED 🔒"
-msgstr "Tài khoản ĐÃ KHÓA 🔒"
-
-#: vpn_panel/admin.py:438
-msgid "Your VPN account has been locked by administrator."
-msgstr "Tài khoản VPN của bạn đã bị khóa bởi quản trị viên."
-
-#: vpn_panel/admin.py:443
-#, python-format
-msgid "Locked %(count)d accounts."
-msgstr "Đã khóa %(count)d tài khoản."
-
-#: vpn_panel/admin.py:445
-msgid "Unlock VPN & Add days"
-msgstr "Mở khóa VPN & Thêm ngày"
-
-#: vpn_panel/admin.py:464
-msgid "UNLOCKED ✅"
-msgstr "ĐÃ MỞ KHÓA ✅"
-
-#: vpn_panel/admin.py:465
-#, python-format
-msgid "VPN account unlocked and received %(days)d additional days of use."
-msgstr "Tài khoản VPN đã mở khóa và nhận được thêm %(days)d ngày sử dụng."
-
-#: vpn_panel/admin.py:470
-#, python-format
-msgid "Unlocked and added %(days)d days for %(count)d accounts."
-msgstr "Đã mở khóa và thêm %(days)d ngày cho %(count)d tài khoản."
-
-#: vpn_panel/admin.py:513
-msgid "Saved server.conf & Restarted OpenVPN successful!"
-msgstr "Đã lưu server.conf & Khởi động lại OpenVPN thành công!"
-
-#: vpn_panel/admin.py:514
-msgid "Error server.conf"
-msgstr "Lỗi server.conf"
-
-#: vpn_panel/admin.py:518
-msgid "Saved Template client-common.txt successfully (No restart needed)"
-msgstr "Đã lưu Mẫu client-common.txt thành công (Không cần khởi động lại)"
-
-#: vpn_panel/admin.py:519
-msgid "Error client-common.txt"
-msgstr "Lỗi client-common.txt"
-
-#: vpn_panel/admin.py:524
-msgid "Server Configuration & Profile Template"
-msgstr "Cấu hình Server & Mẫu Profile"
-
-#: vpn_panel/apps.py:7
-msgid "VPN Management"
-msgstr ""
-
-#: vpn_panel/forms.py:6 vpn_panel/forms.py:27
-#, fuzzy
-#| msgid "Confirm Password"
-msgid "Password"
-msgstr "Xác nhận mật khẩu"
-
-#: vpn_panel/forms.py:8
-msgid "Email (Required for Verification)"
-msgstr ""
-
-#: vpn_panel/forms.py:8
-#, fuzzy
-#| msgid "No email"
-msgid "Email"
-msgstr "Chưa có email"
-
-#: vpn_panel/forms.py:14 vpn_panel/forms.py:34
-#, fuzzy
-#| msgid "User"
-msgid "Username"
-msgstr "Người dùng"
-
-#: vpn_panel/forms.py:23 vpn_panel/forms.py:44
-#, fuzzy
-#| msgid "Invalid data or passwords do not match"
-msgid "Passwords do not match!"
-msgstr "Dữ liệu không hợp lệ hoặc mật khẩu không khớp"
-
-#: vpn_panel/forms.py:36
-msgid "Email (Optional)"
-msgstr ""
-
-#: vpn_panel/models.py:10
 msgid "Purchase Date"
 msgstr "Ngày mua"
 
-#: vpn_panel/models.py:11
 msgid "Duration (Days)"
 msgstr "Thời hạn (Ngày)"
 
-#: vpn_panel/models.py:12
 msgid "Expiry Date"
 msgstr "Ngày hết hạn"
 
-#: vpn_panel/models.py:13
 msgid "Amount Paid"
 msgstr "Số tiền đã trả"
 
-#: vpn_panel/models.py:18 vpn_panel/models.py:117 vpn_panel/models.py:125
-msgid "Expired"
-msgstr "Đã hết hạn"
-
-#: vpn_panel/models.py:19
-msgid "Canceled"
+msgid "Đang hoạt động"
 msgstr ""
 
-#: vpn_panel/models.py:20
-msgid "Demo (3 days)"
+msgid "Hết hạn"
 msgstr ""
 
-#: vpn_panel/models.py:129
-msgid "Connected"
-msgstr "Đã kết nối"
-
-#: vpn_panel/models.py:132
-msgid "Locked (System)"
+msgid "Đã hủy"
 msgstr ""
 
-#: vpn_panel/models.py:134
-#, fuzzy
-#| msgid "Locked"
-msgid "Locked (DB)"
-msgstr "Đã khóa"
+msgid "Dùng thử (3 ngày)"
+msgstr ""
 
-#: vpn_panel/models.py:161
+msgid "Client Name"
+msgstr "Tên Client"
+
+msgid "IP Address"
+msgstr "Địa chỉ IP"
+
 #, fuzzy
 #| msgid "Locked"
 msgid "Is Locked"
 msgstr "Đã khóa"
 
-#: vpn_panel/models.py:162
 msgid "Has OVPN File"
 msgstr ""
 
-#: vpn_panel/tasks.py:84
-#, fuzzy
-#| msgid ""
-#| "Your plan has expired or has been suspended. Please renew to restore "
-#| "Internet access."
-msgid ""
-"Your plan expired 3 days ago. Access is now locked. Please renew to continue."
-msgstr ""
-"Gói của bạn đã hết hạn hoặc bị tạm ngưng. Vui lòng gia hạn để khôi phục truy "
-"cập Internet."
-
-#: vpn_panel/tasks.py:146
-msgid "Your VPN account has expired"
-msgstr "Tài khoản VPN của bạn đã hết hạn"
-
-#: vpn_panel/tasks.py:147
-#, fuzzy, python-format
-#| msgid ""
-#| "Hello %(name)s,\n"
-#| "\n"
-#| "Your VPN account expired on %(date)s. Please renew to continue using our "
-#| "service.\n"
-#| "\n"
-#| "Best regards,\n"
-#| "ShieldCall VN Team"
-msgid ""
-"Hello %(name)s,\n"
-"\n"
-"Your VPN account expired on %(date)s. Please renew to continue using our "
-"service.\n"
-"\n"
-"Best regards,\n"
-"%(site_name)s Team"
-msgstr ""
-"Xin chào %(name)s,\n"
-"\n"
-"Tài khoản VPN của bạn đã hết hạn vào ngày %(date)s. Vui lòng gia hạn để tiếp "
-"tục sử dụng dịch vụ của chúng tôi.\n"
-"\n"
-"Trân trọng,\n"
-"Đội ngũ ShieldCall VN"
-
-#: vpn_panel/tasks.py:168
 msgid "Account Expired"
 msgstr "Tài khoản hết hạn"
 
-#: vpn_panel/tasks.py:169
 #, python-format
 msgid "Account %(username)s has expired. Please renew now!"
 msgstr "Tài khoản %(username)s đã hết hạn. Vui lòng gia hạn ngay!"
 
-#: vpn_panel/tasks.py:195
+msgid "Expires in 3 days"
+msgstr ""
+
+msgid "Your config will expire soon. Top up now to stay connected!"
+msgstr ""
+
 #, fuzzy
 #| msgid "Your VPN account has expired"
 msgid "Notice: Your VPN account expires in 3 days"
 msgstr "Tài khoản VPN của bạn đã hết hạn"
 
-#: vpn_panel/tasks.py:196
 #, fuzzy, python-format
 #| msgid ""
 #| "Hello %(name)s,\n"
 #| "\n"
-#| "Your VPN account expired on %(date)s. Please renew to continue using our "
-#| "service.\n"
+#| "Your VPN account expired on %(date)s. Please renew to continue using our service.\n"
 #| "\n"
 #| "Best regards,\n"
 #| "ShieldCall VN Team"
-msgid ""
-"Hello %(name)s,\n"
-"\n"
-"This is a friendly reminder that your VPN account will expire on %(date)s "
-"(in 3 days). Please renew it early to avoid any interruption in service.\n"
-"\n"
-"Best regards,\n"
-"%(site_name)s Team"
+msgid "Hello %(name)s, This is a friendly reminder that your VPN account will expire on %(date)s (in 3 days). Please renew it early to avoid any interruption in service. Best regards, %(site_name)s Team"
 msgstr ""
 "Xin chào %(name)s,\n"
 "\n"
-"Tài khoản VPN của bạn đã hết hạn vào ngày %(date)s. Vui lòng gia hạn để tiếp "
-"tục sử dụng dịch vụ của chúng tôi.\n"
+"Tài khoản VPN của bạn đã hết hạn vào ngày %(date)s. Vui lòng gia hạn để tiếp tục sử dụng dịch vụ của chúng tôi.\n"
 "\n"
 "Trân trọng,\n"
 "Đội ngũ ShieldCall VN"
 
-#: vpn_panel/tasks.py:217
-msgid "Expires in 3 days"
-msgstr ""
-
-#: vpn_panel/tasks.py:218
-msgid "Your config will expire soon. Top up now to stay connected!"
-msgstr ""
-
-#: vpn_panel/views.py:42
-#, fuzzy
-#| msgid "Secure Account"
-msgid "Verify your account"
-msgstr "Tài khoản an toàn"
-
-#: vpn_panel/views.py:43
-#, python-format
-msgid ""
-"Your verification OTP is: %(otp)s\n"
-"This code will expire in 10 minutes."
-msgstr ""
-
-#: vpn_panel/views.py:49
-msgid "Failed to send OTP to your email. Please make sure the email is valid."
-msgstr ""
-
-#: vpn_panel/views.py:70
-msgid "OTP expired or invalid session. Please register again."
-msgstr ""
-
-#: vpn_panel/views.py:92
-msgid "Verification successful! Welcome to your dashboard."
-msgstr ""
-
-#: vpn_panel/views.py:95
-msgid "Incorrect OTP. Please try again."
-msgstr ""
-
-#: vpn_panel/views.py:130
-msgid "Invalid data or passwords do not match"
-msgstr "Dữ liệu không hợp lệ hoặc mật khẩu không khớp"
-
-#: vpn_panel/views.py:207
-msgid "File not found"
-msgstr "Không tìm thấy tệp"
-
-#: vpn_panel/views.py:223
-msgid "Invalid or expired OTP code."
-msgstr "Mã OTP không hợp lệ hoặc đã hết hạn."
-
-#: vpn_panel/views.py:297
-#, python-format
-msgid "OTP Code for %(username)s: %(code)s"
-msgstr "Mã OTP cho %(username)s: %(code)s"
-
-#: vpn_panel/views.py:303
-msgid "Services restarted successfully."
-msgstr "Dịch vụ đã được khởi động lại thành công."
-
-#: vpn_panel/views.py:326
-msgid "New account created successfully!"
-msgstr "Tạo tài khoản mới thành công!"
-
-#: vpn_panel/views.py:344
-#, python-format
-msgid "Account %(username)s deleted successfully."
-msgstr "Đã xóa tài khoản %(username)s thành công."
-
-#: vpn_panel/views.py:372
-#, python-format
-msgid "Account %(username)s %(status)s."
-msgstr "Tài khoản %(username)s %(status)s."
-
-#: vpn_project/settings.py:53
 msgid "OpenVPN Manager"
 msgstr "Quản lý OpenVPN"
 
-#: vpn_project/settings.py:54
 msgid "OpenVPN Manager Admin"
 msgstr "Quản trị OpenVPN"
 
-#: vpn_project/settings.py:65
 msgid "Back to Main Site"
 msgstr "Quay về trang chính"
 
-#: vpn_project/settings.py:68
 msgid "User Home"
 msgstr "Trang chủ người dùng"
 
-#: vpn_project/settings.py:75
 msgid "VPN Operations"
 msgstr "Hoạt động VPN"
 
-#: vpn_project/settings.py:84
+msgid "Dashboard"
+msgstr "Bảng điều khiển"
+
 msgid "Manage Subscriptions"
 msgstr "Quản lý Gói cước"
 
-#: vpn_project/settings.py:89
 msgid "User Accounts"
 msgstr "Tài khoản người dùng"
 
-#: vpn_project/settings.py:94
 msgid "VPN Client List"
 msgstr "Danh sách Client VPN"
 
-#: vpn_project/settings.py:101
 msgid "Monitoring & Logs"
 msgstr "Giám sát & Nhật ký"
 
-#: vpn_project/settings.py:105
 msgid "Live Logs"
 msgstr "Xem Log Trực Tiếp"
 
-#: vpn_project/settings.py:110
 msgid "Usage History"
 msgstr "Lịch sử sử dụng"
 
-#: vpn_project/settings.py:115
 msgid "Traffic Snapshots"
 msgstr "Snapshot Traffic"
 
-#: vpn_project/settings.py:122
 msgid "System Configuration"
 msgstr "Cấu hình Hệ thống"
 
-#: vpn_project/settings.py:126
 msgid "VPN Config (Server)"
 msgstr "Cấu hình VPN (Server)"
 
-#: vpn_project/settings.py:131
 msgid "General Settings"
 msgstr "Cài đặt chung"
 
-#: vpn_project/settings.py:136
 msgid "OTP Codes"
 msgstr "Mã OTP"
 
-#: vpn_project/settings.py:236
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
-#: vpn_project/settings.py:237
 msgid "English"
 msgstr "Tiếng Anh"
+
+#~ msgid "System is operating stably"
+#~ msgstr "Hệ thống đang hoạt động ổn định"
+
+#~ msgid "Welcome back,"
+#~ msgstr "Chào mừng trở lại,"
+
+#~ msgid "Monitor traffic, manage users, and optimize your vpn system with professional real-time analytics panels."
+#~ msgstr "Giám sát lưu lượng, quản lý người dùng và tối ưu hóa hệ thống VPN của bạn với các bảng phân tích thời gian thực chuyên nghiệp."
+
+#~ msgid "Total Revenue"
+#~ msgstr "Tổng doanh thu"
+
+#~ msgid "Manage Subscription"
+#~ msgstr "Quản lý Gói cước"
+
+#~ msgid "Update"
+#~ msgstr "Cập nhật"
+
+#~ msgid "Members"
+#~ msgstr "Thành viên"
+
+#, python-format
+#~ msgid "+12%% compared to last month"
+#~ msgstr "+12%% so với tháng trước"
+
+#~ msgid "Traffic Analytics Chart"
+#~ msgstr "Biểu đồ lưu lượng truy cập"
+
+#~ msgid "Quick Management"
+#~ msgstr "Danh mục quản lý nhanh"
+
+#, fuzzy
+#~| msgid "Download (RX)"
+#~ msgid "Download (Mbps)"
+#~ msgstr "Tải xuống (RX)"
+
+#, fuzzy
+#~| msgid "Upload (TX)"
+#~ msgid "Upload (Mbps)"
+#~ msgstr "Tải lên (TX)"
+
+#, fuzzy
+#~| msgid "Quick Management"
+#~ msgid "User Management"
+#~ msgstr "Danh mục quản lý nhanh"
+
+#, fuzzy
+#~| msgid "Total Members"
+#~ msgid "Total Access Nodes"
+#~ msgstr "Tổng số thành viên"
+
+#~ msgid "Create Account"
+#~ msgstr "Tạo tài khoản"
+
+#, fuzzy
+#~| msgid "Active Session"
+#~| msgid_plural "Active Sessions"
+#~ msgid "Active Directory"
+#~ msgstr "Phiên hoạt động"
+
+#, fuzzy
+#~| msgid "Update Profile"
+#~ msgid "User Profile"
+#~ msgstr "Cập nhật hồ sơ"
+
+#, fuzzy
+#~| msgid "Secure Access Gateway"
+#~ msgid "Access State"
+#~ msgstr "Cổng truy cập an toàn"
+
+#~ msgid "Plan Info"
+#~ msgstr "Thông tin gói"
+
+#, fuzzy
+#~| msgid "Live Logs"
+#~ msgid "Live"
+#~ msgstr "Xem Log Trực Tiếp"
+
+#, fuzzy
+#~| msgid "Locked"
+#~ msgid "Blocked"
+#~ msgstr "Đã khóa"
+
+#~ msgid "Are you sure you want to DELETE this account?"
+#~ msgstr "Bạn có chắc chắn muốn XÓA tài khoản này không?"
+
+#~ msgid "Repair fixes status log path in server.conf. Init creates Nginx reverse proxy config."
+#~ msgstr "Sửa lỗi giúp chuẩn hóa đường dẫn status log trong server.conf. Init sẽ tạo cấu hình Nginx reverse proxy."
+
+#~ msgid "Download App"
+#~ msgstr "Tải ứng dụng"
+
+#~ msgid "Enter OTP"
+#~ msgstr "Nhập OTP"
+
+#~ msgid "Users"
+#~ msgstr "Người dùng"
+
+#~ msgid "Admin"
+#~ msgstr "Quản trị"
+
+#~ msgid "Logout"
+#~ msgstr "Đăng xuất"
+
+#~ msgid "Register"
+#~ msgstr "Đăng ký"
+
+#~ msgid "Login"
+#~ msgstr "Đăng nhập"
+
+#, python-format
+#~ msgid "Welcome, <span class=\"text-blue-500\">%(name)s</span>"
+#~ msgstr "Chào mừng, <span class=\"text-blue-500\">%(name)s</span>"
+
+#~ msgid "Welcome back. This is your personal VPN management portal."
+#~ msgstr "Chào mừng trở lại. Đây là cổng quản lý VPN cá nhân của bạn."
+
+#~ msgid "Connection Suspended"
+#~ msgstr "Kết nối bị tạm ngưng"
+
+#~ msgid "Action Required: Renew Plan"
+#~ msgstr "Yêu cầu: Gia hạn gói cước"
+
+#~ msgid "Your VPN access is currently suspended. Please scan the QR code to top up your balance and restore connectivity."
+#~ msgstr "Quyền truy cập VPN của bạn hiện đang bị tạm ngưng. Vui lòng quét mã QR để nạp tiền vào số dư và khôi phục kết nối."
+
+#~ msgid "VPN Config"
+#~ msgstr "Cấu hình VPN"
+
+#~ msgid "Your VPN Connection"
+#~ msgstr "Kết nối VPN của bạn"
+
+#, fuzzy
+#~| msgid "Download your .ovpn file to start using the VPN. Compatible with all OpenVPN apps."
+#~ msgid "Download your config file to start using the VPN. Compatible with all OpenVPN clients."
+#~ msgstr "Tải xuống tệp .ovpn của bạn để bắt đầu sử dụng VPN. Tương thích với tất cả các ứng dụng OpenVPN."
+
+#~ msgid "DOWNLOAD CONFIG (.OVPN)"
+#~ msgstr "TẢI CẤU HÌNH (.OVPN)"
+
+#~ msgid "Install App"
+#~ msgstr "Cài đặt ứng dụng"
+
+#~ msgid "Generating config..."
+#~ msgstr "Đang tạo cấu hình..."
+
+#~ msgid "Plan Type"
+#~ msgstr "Loại gói"
+
+#~ msgid "Expiry"
+#~ msgstr "Hết hạn"
+
+#~ msgid "Never"
+#~ msgstr "Vĩnh viễn"
+
+#~ msgid "Balance"
+#~ msgstr "Số dư"
+
+#~ msgid "Days Remaining"
+#~ msgstr "Số ngày còn lại"
+
+#~ msgid "Notifications"
+#~ msgstr "Thông báo"
+
+#~ msgid "Get updates on your plan and system maintenance."
+#~ msgstr "Nhận cập nhật về gói cước và bảo trì hệ thống."
+
+#~ msgid "Download Installer"
+#~ msgstr "Tải xuống bộ cài"
+
+#~ msgid "Download"
+#~ msgstr "Tải xuống"
+
+#, fuzzy
+#~| msgid "Download Profile"
+#~ msgid "Download Package"
+#~ msgstr "Tải xuống cấu hình"
+
+#, fuzzy
+#~| msgid "No members found."
+#~ msgid "No installers found."
+#~ msgstr "Không tìm thấy thành viên nào."
+
+#, fuzzy
+#~| msgid "Permissions"
+#~ msgid "Provision"
+#~ msgstr "Quyền hạn"
+
+#, fuzzy
+#~| msgid "Use the OTP code to download the profile (.ovpn) and import it into the app."
+#~ msgid "Use your one-time password to download your unique encryption profile (.ovpn) inside the client app."
+#~ msgstr "Sử dụng mã OTP để tải xuống cấu hình (.ovpn) và nhập vào ứng dụng."
+
+#~ msgid "Connect"
+#~ msgstr "Kết nối"
+
+#~ msgid "VPN Locked"
+#~ msgstr "VPN bị khóa"
+
+#~ msgid "Account Suspended"
+#~ msgstr "Tài khoản bị tạm ngưng"
+
+#~ msgid "Your plan has expired or has been suspended. Please renew to restore Internet access."
+#~ msgstr "Gói của bạn đã hết hạn hoặc bị tạm ngưng. Vui lòng gia hạn để khôi phục truy cập Internet."
+
+#~ msgid "Scan QR for quick payment"
+#~ msgstr "Quét mã QR để thanh toán nhanh"
+
+#~ msgid "Telegram Support"
+#~ msgstr "Hỗ trợ Telegram"
+
+#~ msgid "Try Reconnecting"
+#~ msgstr "Thử kết nối lại"
+
+#, fuzzy
+#~| msgid "Total Revenue"
+#~ msgid "Total"
+#~ msgstr "Tổng doanh thu"
+
+#, fuzzy
+#~| msgid "Total Members"
+#~ msgid "Portal Access"
+#~ msgstr "Tổng số thành viên"
+
+#, fuzzy
+#~| msgid "Account Suspended"
+#~ msgid "Account handle"
+#~ msgstr "Tài khoản bị tạm ngưng"
+
+#, fuzzy
+#~| msgid "Active Session"
+#~| msgid_plural "Active Sessions"
+#~ msgid "Initialize Session"
+#~ msgstr "Phiên hoạt động"
+
+#~ msgid "Download VPN Profile"
+#~ msgstr "Tải cấu hình VPN"
+
+#~ msgid "Profile"
+#~ msgstr "Cấu hình"
+
+#~ msgid "Enter the OTP code provided by Admin to download your VPN configuration file."
+#~ msgstr "Nhập mã OTP được Admin cung cấp để tải xuống tệp cấu hình VPN của bạn."
+
+#~ msgid "OTP Code (8 characters)"
+#~ msgstr "Mã OTP (8 ký tự)"
+
+#~ msgid "Download Profile"
+#~ msgstr "Tải xuống cấu hình"
+
+#~ msgid "OTP code is valid for 24 hours and can only be used once."
+#~ msgstr "Mã OTP có hiệu lực trong 24 giờ và chỉ có thể sử dụng một lần."
+
+#~ msgid "Status"
+#~ msgstr "Trạng thái"
+
+#~ msgid "Created"
+#~ msgstr "Ngày tạo"
+
+#~ msgid "Actions"
+#~ msgstr "Hành động"
+
+#~ msgid "Locked"
+#~ msgstr "Đã khóa"
+
+#~ msgid "Active"
+#~ msgstr "Đang hoạt động"
+
+#, python-format
+#~ msgid "Are you sure you want to delete %(name)s?"
+#~ msgstr "Bạn có chắc chắn muốn xóa %(name)s?"
+
+#~ msgid "No clients found. Add one on the left!"
+#~ msgstr "Không tìm thấy client nào. Thêm mới ở bên trái!"
+
+#~ msgid "SERVICE STATUS"
+#~ msgstr "TRẠNG THÁI DỊCH VỤ"
+
+#~ msgid "ONLINE CLIENTS"
+#~ msgstr "CLIENT TRỰC TUYẾN"
+
+#~ msgid "Active Session"
+#~ msgid_plural "Active Sessions"
+#~ msgstr[0] "Phiên hoạt động"
+
+#~ msgid "TOTAL VPN TRAFFIC"
+#~ msgstr "TỔNG LƯU LƯỢNG VPN"
+
+#~ msgid "INTERFACE"
+#~ msgstr "INTERFACE"
+
+#, fuzzy
+#~| msgid "Download"
+#~ msgid "Down"
+#~ msgstr "Tải xuống"
+
+#~ msgid "Update Profile"
+#~ msgstr "Cập nhật hồ sơ"
+
+#~ msgid "Setup"
+#~ msgstr "Thiết lập"
+
+#~ msgid "Secure Account"
+#~ msgstr "Tài khoản an toàn"
+
+#~ msgid "As a migrated user, please set your email and a permanent password to continue."
+#~ msgstr "Là người dùng được chuyển sang, vui lòng đặt email và mật khẩu cố định để tiếp tục."
+
+#~ msgid "Email Address"
+#~ msgstr "Địa chỉ Email"
+
+#~ msgid "New Permanent Password"
+#~ msgstr "Mật khẩu cố định mới"
+
+#~ msgid "Confirm Password"
+#~ msgstr "Xác nhận mật khẩu"
+
+#~ msgid "Update and Access Dashboard"
+#~ msgstr "Cập nhật và Truy cập Bảng điều khiển"
+
+#~ msgid "Sign Up"
+#~ msgstr "Đăng ký"
+
+#, fuzzy
+#~| msgid "Secure Account"
+#~ msgid "Secure Account Provisioning"
+#~ msgstr "Tài khoản an toàn"
+
+#, fuzzy
+#~| msgid "Create Account"
+#~ msgid "Create your"
+#~ msgstr "Tạo tài khoản"
+
+#, fuzzy
+#~| msgid "VPN Client List"
+#~ msgid "VPN Identity"
+#~ msgstr "Danh sách Client VPN"
+
+#~ msgid "Already have an account?"
+#~ msgstr "Đã có tài khoản?"
+
+#~ msgid "Sign In"
+#~ msgstr "Đăng nhập"
+
+#~ msgid "Total Members"
+#~ msgstr "Tổng số thành viên"
+
+#~ msgid "Online Users"
+#~ msgstr "Người dùng trực tuyến"
+
+#~ msgid "Extend 30 Days"
+#~ msgstr "Gia hạn 30 ngày"
+
+#, python-format
+#~ msgid "Extended %(count)d users by %(days)d days."
+#~ msgstr "Đã gia hạn %(count)d người dùng thêm %(days)d ngày."
+
+#~ msgid "Set Infinite Expiry (999 years)"
+#~ msgstr "Đặt ngày hết hạn vô hạn (999 năm)"
+
+#, python-format
+#~ msgid "Set INFINITE expiry for %(count)d users."
+#~ msgstr "Đã đặt hết hạn VÔ HẠN cho %(count)d người dùng."
+
+#~ msgid "Sync from System (OpenVPN)"
+#~ msgstr "Đồng bộ từ hệ thống (OpenVPN)"
+
+#, python-format
+#~ msgid "Sync complete: %(created)d new, %(skipped)d already existed."
+#~ msgstr "Đồng bộ hoàn tất: %(created)d mới, %(skipped)d đã tồn tại."
+
+#, fuzzy
+#~| msgid "Status"
+#~ msgid "VPN Status"
+#~ msgstr "Trạng thái"
+
+#~ msgid "Plan & Payment"
+#~ msgstr "Gói & Thanh toán"
+
+#, python-format
+#~ msgid "Error deleting user %(username)s: %(error)s"
+#~ msgstr "Lỗi xóa người dùng %(username)s: %(error)s"
+
+#, python-format
+#~ msgid "Cleaned up %(count)d users without .ovpn files."
+#~ msgstr "Đã dọn dẹp %(count)d người dùng không có tệp .ovpn."
+
+#~ msgid "No users found to clean up."
+#~ msgstr "Không có người dùng nào cần dọn dẹp."
+
+#, python-format
+#~ msgid "Sync complete: %(created)d new, %(skipped)d skipped."
+#~ msgstr "Đồng bộ hoàn tất: %(created)d mới, %(skipped)d đã bỏ qua."
+
+#, python-format
+#~ msgid "Started VPN certificate creation for %(username)s in the background."
+#~ msgstr "Đã bắt đầu tạo chứng chỉ VPN cho %(username)s trong nền."
+
+#~ msgid "Rebuild .ovpn files"
+#~ msgstr "Tạo lại tệp .ovpn"
+
+#, python-format
+#~ msgid "Queued rebuild requests for %(count)d .ovpn files."
+#~ msgstr "Đã đưa vào hàng chờ yêu cầu tạo lại %(count)d tệp .ovpn."
+
+#, python-format
+#~ msgid "Queued revocation requests for %(count)d certificates."
+#~ msgstr "Đã đưa vào hàng chờ yêu cầu thu hồi %(count)d chứng chỉ."
+
+#~ msgid "Display Name"
+#~ msgstr "Tên hiển thị"
+
+#~ msgid "VPN IP"
+#~ msgstr "IP VPN"
+
+#, python-format
+#~ msgid "Started OVPN issuance for %(username)s in background."
+#~ msgstr "Đã bắt đầu cấp OVPN cho %(username)s trong nền."
+
+#~ msgid "UNLOCKED"
+#~ msgstr "ĐÃ MỞ KHÓA"
+
+#~ msgid "LOCKED"
+#~ msgstr "ĐÃ KHÓA"
+
+#~ msgid "OTP"
+#~ msgstr "Mã OTP"
+
+#~ msgid "OVPN"
+#~ msgstr "Tải OVPN"
+
+#~ msgid "Issue OVPN"
+#~ msgstr "Cấp OVPN"
+
+#, python-format
+#~ msgid "Toggled %(username)s to %(status)s successfully."
+#~ msgstr "Đã chuyển %(username)s sang %(status)s thành công."
+
+#~ msgid "Subscription Details"
+#~ msgstr "Chi tiết gói cước"
+
+#~ msgid "Revoke certificate"
+#~ msgstr "Thu hồi chứng chỉ"
+
+#~ msgid "Amount"
+#~ msgstr "Số lượng"
+
+#~ msgid "INFINITE"
+#~ msgstr "VÔ CỰC"
+
+#~ msgid "days"
+#~ msgstr "ngày"
+
+#~ msgid "Payment"
+#~ msgstr "Thanh toán"
+
+#~ msgid "PAID"
+#~ msgstr "ĐÃ THANH TOÁN"
+
+#~ msgid "EXPIRED/LOCKED"
+#~ msgstr "HẾT HẠN/KHÓA"
+
+#~ msgid "Lock VPN"
+#~ msgstr "Khóa VPN"
+
+#~ msgid "Account LOCKED 🔒"
+#~ msgstr "Tài khoản ĐÃ KHÓA 🔒"
+
+#~ msgid "Your VPN account has been locked by administrator."
+#~ msgstr "Tài khoản VPN của bạn đã bị khóa bởi quản trị viên."
+
+#, python-format
+#~ msgid "Locked %(count)d accounts."
+#~ msgstr "Đã khóa %(count)d tài khoản."
+
+#~ msgid "Unlock VPN & Add days"
+#~ msgstr "Mở khóa VPN & Thêm ngày"
+
+#~ msgid "UNLOCKED ✅"
+#~ msgstr "ĐÃ MỞ KHÓA ✅"
+
+#, python-format
+#~ msgid "VPN account unlocked and received %(days)d additional days of use."
+#~ msgstr "Tài khoản VPN đã mở khóa và nhận được thêm %(days)d ngày sử dụng."
+
+#, python-format
+#~ msgid "Unlocked and added %(days)d days for %(count)d accounts."
+#~ msgstr "Đã mở khóa và thêm %(days)d ngày cho %(count)d tài khoản."
+
+#~ msgid "Saved server.conf & Restarted OpenVPN successful!"
+#~ msgstr "Đã lưu server.conf & Khởi động lại OpenVPN thành công!"
+
+#~ msgid "Error server.conf"
+#~ msgstr "Lỗi server.conf"
+
+#~ msgid "Saved Template client-common.txt successfully (No restart needed)"
+#~ msgstr "Đã lưu Mẫu client-common.txt thành công (Không cần khởi động lại)"
+
+#~ msgid "Error client-common.txt"
+#~ msgstr "Lỗi client-common.txt"
+
+#~ msgid "Server Configuration & Profile Template"
+#~ msgstr "Cấu hình Server & Mẫu Profile"
+
+#, fuzzy
+#~| msgid "Confirm Password"
+#~ msgid "Password"
+#~ msgstr "Xác nhận mật khẩu"
+
+#, fuzzy
+#~| msgid "No email"
+#~ msgid "Email"
+#~ msgstr "Chưa có email"
+
+#, fuzzy
+#~| msgid "User"
+#~ msgid "Username"
+#~ msgstr "Người dùng"
+
+#, fuzzy
+#~| msgid "Invalid data or passwords do not match"
+#~ msgid "Passwords do not match!"
+#~ msgstr "Dữ liệu không hợp lệ hoặc mật khẩu không khớp"
+
+#~ msgid "Expired"
+#~ msgstr "Đã hết hạn"
+
+#~ msgid "Connected"
+#~ msgstr "Đã kết nối"
+
+#, fuzzy
+#~| msgid "Locked"
+#~ msgid "Locked (DB)"
+#~ msgstr "Đã khóa"
+
+#, fuzzy
+#~| msgid "Your plan has expired or has been suspended. Please renew to restore Internet access."
+#~ msgid "Your plan expired 3 days ago. Access is now locked. Please renew to continue."
+#~ msgstr "Gói của bạn đã hết hạn hoặc bị tạm ngưng. Vui lòng gia hạn để khôi phục truy cập Internet."
+
+#~ msgid "Your VPN account has expired"
+#~ msgstr "Tài khoản VPN của bạn đã hết hạn"
+
+#, fuzzy, python-format
+#~| msgid ""
+#~| "Hello %(name)s,\n"
+#~| "\n"
+#~| "Your VPN account expired on %(date)s. Please renew to continue using our service.\n"
+#~| "\n"
+#~| "Best regards,\n"
+#~| "ShieldCall VN Team"
+#~ msgid ""
+#~ "Hello %(name)s,\n"
+#~ "\n"
+#~ "Your VPN account expired on %(date)s. Please renew to continue using our service.\n"
+#~ "\n"
+#~ "Best regards,\n"
+#~ "%(site_name)s Team"
+#~ msgstr ""
+#~ "Xin chào %(name)s,\n"
+#~ "\n"
+#~ "Tài khoản VPN của bạn đã hết hạn vào ngày %(date)s. Vui lòng gia hạn để tiếp tục sử dụng dịch vụ của chúng tôi.\n"
+#~ "\n"
+#~ "Trân trọng,\n"
+#~ "Đội ngũ ShieldCall VN"
+
+#, fuzzy
+#~| msgid "Secure Account"
+#~ msgid "Verify your account"
+#~ msgstr "Tài khoản an toàn"
+
+#~ msgid "Invalid data or passwords do not match"
+#~ msgstr "Dữ liệu không hợp lệ hoặc mật khẩu không khớp"
+
+#~ msgid "File not found"
+#~ msgstr "Không tìm thấy tệp"
+
+#~ msgid "Invalid or expired OTP code."
+#~ msgstr "Mã OTP không hợp lệ hoặc đã hết hạn."
+
+#, python-format
+#~ msgid "OTP Code for %(username)s: %(code)s"
+#~ msgstr "Mã OTP cho %(username)s: %(code)s"
+
+#~ msgid "Services restarted successfully."
+#~ msgstr "Dịch vụ đã được khởi động lại thành công."
+
+#~ msgid "New account created successfully!"
+#~ msgstr "Tạo tài khoản mới thành công!"
+
+#, python-format
+#~ msgid "Account %(username)s deleted successfully."
+#~ msgstr "Đã xóa tài khoản %(username)s thành công."
+
+#, python-format
+#~ msgid "Account %(username)s %(status)s."
+#~ msgstr "Tài khoản %(username)s %(status)s."
 
 #~ msgid "User"
 #~ msgstr "Người dùng"
@@ -1488,19 +1087,11 @@ msgstr "Tiếng Anh"
 #~ msgid "Install"
 #~ msgstr "Cài đặt"
 
-#~ msgid ""
-#~ "Choose the version compatible with your OS to start your secure "
-#~ "connection."
-#~ msgstr ""
-#~ "Chọn phiên bản tương thích với hệ điều hành của bạn để bắt đầu kết nối an "
-#~ "toàn."
+#~ msgid "Choose the version compatible with your OS to start your secure connection."
+#~ msgstr "Chọn phiên bản tương thích với hệ điều hành của bạn để bắt đầu kết nối an toàn."
 
-#~ msgid ""
-#~ "The latest version of OpenVPN Client is recommended for optimal security "
-#~ "and performance."
-#~ msgstr ""
-#~ "Khuyên dùng phiên bản OpenVPN Client mới nhất để có bảo mật và hiệu năng "
-#~ "tối ưu."
+#~ msgid "The latest version of OpenVPN Client is recommended for optimal security and performance."
+#~ msgstr "Khuyên dùng phiên bản OpenVPN Client mới nhất để có bảo mật và hiệu năng tối ưu."
 
 #~ msgid "DOWNLOAD NOW"
 #~ msgstr "TẢI XUỐNG NGAY"
@@ -1514,11 +1105,8 @@ msgstr "Tiếng Anh"
 #~ msgid "Download & Install"
 #~ msgstr "Tải xuống & Cài đặt"
 
-#~ msgid ""
-#~ "Download the installer above and follow the system installation "
-#~ "instructions."
-#~ msgstr ""
-#~ "Tải xuống bộ cài bên trên và làm theo hướng dẫn cài đặt của hệ thống."
+#~ msgid "Download the installer above and follow the system installation instructions."
+#~ msgstr "Tải xuống bộ cài bên trên và làm theo hướng dẫn cài đặt của hệ thống."
 
 #~ msgid "Import Profile"
 #~ msgstr "Nhập cấu hình"

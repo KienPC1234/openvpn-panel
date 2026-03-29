@@ -1,74 +1,141 @@
 {% extends "unfold/layouts/base.html" %}
-{% load i18n admin_urls static %}
+{% load i18n static %}
 
 {% block content %}
-<div class="px-4 py-8 sm:px-6 lg:px-8">
+<div class="px-4 py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto">
     <div class="mb-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
             <i class="fas fa-terminal text-primary-600 dark:text-primary-400 text-3xl"></i>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Service Logs</h1>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="relative flex h-3 w-3">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </span>
-            <span class="text-sm font-medium text-green-600 dark:text-green-400">Live Updating</span>
+        <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer group text-sm text-gray-600 dark:text-gray-400 font-medium">
+                <input type="checkbox" id="auto-scroll" checked class="rounded border-gray-300 text-primary-600 focus:ring-primary-600">
+                <span>Auto-Scroll</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-sm font-medium text-green-600 dark:text-green-400">Live Updating</span>
+            </div>
+            <button onclick="refreshLogs()" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400" title="Refresh Now">
+                <span class="material-symbols-outlined text-xl">refresh</span>
+            </button>
         </div>
     </div>
 
-    <div class="bg-gray-950 rounded-xl border border-gray-800 shadow-2xl overflow-hidden font-mono text-sm leading-relaxed">
-        <!-- Terminal Header -->
-        <div class="bg-gray-900 px-4 py-2 border-b border-gray-800 flex items-center justify-between">
-            <div class="flex gap-1.5">
-                <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
-            </div>
-            <div class="text-gray-500 text-xs font-bold uppercase tracking-widest">openvpn-server@server.service</div>
-            <div class="w-10"></div>
-        </div>
+    <!-- Tabs Container -->
+    <div class="mb-4 border-b border-gray-200 dark:border-gray-800">
+        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400" id="log-tabs" role="tablist">
+            <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 rounded-t-lg active border-primary-600 text-primary-600" 
+                        data-service="openvpn" role="tab" onclick="switchService('openvpn', this)">
+                    <i class="fas fa-vpn-lock mr-2"></i>OpenVPN
+                </button>
+            </li>
+            <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" 
+                        data-service="panel" role="tab" onclick="switchService('panel', this)">
+                    <i class="fas fa-layout mr-2"></i>VPN Panel
+                </button>
+            </li>
+            <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" 
+                        data-service="worker" role="tab" onclick="switchService('worker', this)">
+                    <i class="fas fa-cogs mr-2"></i>Worker
+                </button>
+            </li>
+            <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" 
+                        data-service="beat" role="tab" onclick="switchService('beat', this)">
+                    <i class="fas fa-clock mr-2"></i>Beat
+                </button>
+            </li>
+        </ul>
+    </div>
 
-        <!-- Terminal Content -->
+    <!-- Minimal Log Viewer -->
+    <div class="bg-gray-950 rounded-lg shadow-xl border border-gray-800 overflow-hidden">
         <div id="log-container" 
-             class="p-6 h-[70vh] overflow-y-auto custom-scrollbar"
-             style="scrollbar-width: thin; scrollbar-color: #374151 #030712;"
-             hx-get="{% url 'admin_vpn_logs_content' %}" 
+             class="p-4 h-[70vh] overflow-y-auto"
+             hx-get="{% url 'admin_vpn_logs_content' %}?service=openvpn&lines=150" 
              hx-trigger="every 3s, load"
              hx-swap="innerHTML">
             
-            <!-- Loading State -->
             <div class="flex flex-col items-center justify-center h-full text-gray-500 italic">
                 <div class="animate-spin mb-4">
                     <i class="fas fa-sync-alt text-4xl"></i>
                 </div>
-                <p>Establishing secure connection to system journal...</p>
+                <p>Establishing connection to service logs...</p>
             </div>
         </div>
     </div>
-
-    <div class="mt-4 text-center">
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-            Showing latest 100 journal entries. Auto-refreshing every 3.0s.
-        </p>
-    </div>
 </div>
-
-<style>
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #030712; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
-</style>
 
 <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 <script>
+    let currentService = 'openvpn';
+
+    function switchService(service, el) {
+        currentService = service;
+        
+        // Update UI Tabs
+        document.querySelectorAll('#log-tabs button').forEach(btn => {
+            btn.classList.remove('active', 'border-primary-600', 'text-primary-600');
+            btn.classList.add('border-transparent');
+        });
+        el.classList.add('active', 'border-primary-600', 'text-primary-600');
+        el.classList.remove('border-transparent');
+
+        // Update HTMX attributes
+        const container = document.getElementById('log-container');
+        container.setAttribute('hx-get', `{% url "admin_vpn_logs_content" %}?service=${service}&lines=150`);
+        
+        // Clear log container to show loading
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full text-gray-500 italic">
+                <div class="animate-spin mb-4">
+                    <i class="fas fa-sync-alt text-4xl"></i>
+                </div>
+                <p>Switching to ${service} logs...</p>
+            </div>`;
+            
+        // Process new attributes and trigger load
+        htmx.process(container);
+        htmx.trigger(container, 'load');
+    }
+
+    function refreshLogs() {
+        htmx.trigger('#log-container', 'load');
+    }
+
     document.body.addEventListener('htmx:afterSwap', function(evt) {
         if (evt.detail.target.id === 'log-container') {
             const container = evt.detail.target;
-            container.scrollTop = container.scrollHeight;
+            const autoScroll = document.getElementById('auto-scroll').checked;
+            if (autoScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
         }
     });
 </script>
 
+<style>
+    /* Styling for the log container scrollbar */
+    #log-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    #log-container::-webkit-scrollbar-track {
+        background: #0a0a0a;
+    }
+    #log-container::-webkit-scrollbar-thumb {
+        background: #2a2a2a;
+        border-radius: 4px;
+    }
+    #log-container::-webkit-scrollbar-thumb:hover {
+        background: #3a3a3a;
+    }
+</style>
 {% endblock %}

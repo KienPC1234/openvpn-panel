@@ -1,87 +1,167 @@
 {% extends 'base.html' %}
-{% block title %}Sign Up | Premium VPN{% endblock %}
+{% block title %}Đăng ký | VPN Manager{% endblock %}
 
 {% block content %}
-{% with hide_nav=False full_width=True center_content=True %}
-<div class="min-h-screen w-full flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-900/20 via-gray-950 to-gray-950">
-    <div class="w-full max-w-lg">
-        <!-- Brand Logo -->
-        <div class="text-center mb-6 animate-fade-in-up">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 mb-3 backdrop-blur-xl">
-                <i class="fas fa-user-plus text-3xl text-indigo-500"></i>
-            </div>
-            <h1 class="text-3xl font-black tracking-tighter text-white uppercase">Create <span class="text-indigo-500">Account</span></h1>
-            <p class="text-gray-500 mt-1 font-medium text-sm">Join the Elite Secure Network</p>
+<div class="min-h-screen flex">
+    <!-- LEFT: Visual Panel -->
+    <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#060610] flex-col justify-center px-16">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-0 right-1/4 w-[600px] h-[600px] bg-indigo-600/15 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-700/15 rounded-full blur-[100px]"></div>
+            <div class="absolute inset-0 opacity-[0.025]" style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:48px 48px;"></div>
         </div>
+        <div class="relative z-10">
+            <div class="text-indigo-400 text-xs font-black uppercase tracking-[0.3em] mb-4">Tham gia ngay hôm nay</div>
+            <h2 class="text-5xl font-black text-white leading-tight tracking-tight mb-6">
+                Bảo vệ<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">quyền riêng tư</span><br>
+                của bạn.
+            </h2>
+            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">Tạo tài khoản và trải nghiệm VPN cao cấp với 3 ngày dùng thử miễn phí hoàn toàn.</p>
 
-        <!-- Register Card -->
-        <div class="glass-panel rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
-            <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            
-            <form method="post" class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                {% csrf_token %}
-                
-                {% for field in form %}
-                <div class="{% if field.name == 'email' or 'full_name' in field.name or 'password' in field.name %}md:col-span-2{% endif %}">
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5 ml-1">{{ field.label }}</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">
-                           {% if 'user' in field.name %}
-                               <i class="fas fa-user text-xs"></i>
-                           {% elif 'email' in field.name %}
-                               <i class="fas fa-envelope text-xs"></i>
-                           {% elif 'pass' in field.name %}
-                               <i class="fas fa-lock text-xs"></i>
-                           {% else %}
-                               <i class="fas fa-info-circle text-xs"></i>
-                           {% endif %}
-                        </span>
-                        
-                        {# We skip using {{ field }} directly to apply our custom class #}
-                        <input type="{{ field.field.widget.input_type|default:'text' }}" 
-                               name="{{ field.name }}" 
-                               id="{{ field.id_for_label }}"
-                               {% if field.value %}value="{{ field.value }}"{% endif %}
-                               {% if field.field.required %}required{% endif %}
-                               class="w-full bg-gray-900/50 border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
-                               placeholder="{{ field.label }}">
+            <div class="flex flex-col gap-4">
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400 font-black text-sm">1</div>
+                    <div>
+                        <div class="text-white text-sm font-bold">Điền thông tin và email</div>
+                        <div class="text-gray-600 text-xs mt-0.5">Email dùng để nhận mã xác thực</div>
                     </div>
-                    {% if field.errors %}
-                        <p class="text-red-500 text-[10px] mt-1 font-bold">{{ field.errors.0 }}</p>
-                    {% endif %}
                 </div>
-                {% endfor %}
-
-                <div class="md:col-span-2 mt-4">
-                    <button type="submit" 
-                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-600/20 transform active:scale-[0.98] transition-all flex items-center justify-center gap-2 group/btn">
-                        <i class="fas fa-paper-plane text-xs"></i>
-                        <span>CREATE ACCOUNT</span>
-                    </button>
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400 font-black text-sm">2</div>
+                    <div>
+                        <div class="text-white text-sm font-bold">Xác thực mã OTP qua email</div>
+                        <div class="text-gray-600 text-xs mt-0.5">Mã có hiệu lực trong 10 phút</div>
+                    </div>
                 </div>
-            </form>
-
-            <div class="mt-8 pt-6 border-t border-gray-800 text-center">
-                <p class="text-gray-500 text-sm">
-                    Already part of the network? 
-                    <a href="{% url 'login' %}" class="text-indigo-500 hover:text-indigo-400 font-bold ml-1 transition-colors">Login Gateway</a>
-                </p>
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400 font-black text-sm">3</div>
+                    <div>
+                        <div class="text-white text-sm font-bold">Nhận 3 ngày DEMO miễn phí</div>
+                        <div class="text-gray-600 text-xs mt-0.5">Trải nghiệm VPN cao cấp ngay lập tức</div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Footer Info -->
-        <p class="text-center text-gray-600 text-[10px] mt-8 uppercase font-bold tracking-[0.2em]">
-            &copy; 2026 VPN Infrastructure. Automated Deployment.
-        </p>
+    <!-- RIGHT: Form Panel -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 bg-gray-950">
+        <div class="w-full max-w-md py-8">
+
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 mb-3">
+                    <i class="fas fa-user-plus text-3xl text-indigo-400"></i>
+                </div>
+                <h1 class="text-3xl font-black tracking-tight text-white">TẠO <span class="text-indigo-400">TÀI KHOẢN</span></h1>
+                <p class="text-gray-500 mt-1 text-sm">Đăng ký miễn phí · Nhận ngay <span class="text-indigo-400 font-bold">3 ngày DEMO</span></p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
+                {% if form.non_field_errors %}
+                <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm flex items-start gap-3 mb-5">
+                    <i class="fas fa-exclamation-triangle shrink-0 mt-0.5"></i>
+                    <div>{% for err in form.non_field_errors %}{{ err }}{% endfor %}</div>
+                </div>
+                {% endif %}
+
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Tên đăng nhập <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-user text-sm"></i></span>
+                            <input type="text" name="username" required autofocus value="{{ form.username.value|default:'' }}"
+                                class="w-full bg-gray-950 border {% if form.username.errors %}border-red-500/60{% else %}border-gray-800{% endif %} rounded-xl py-3 pl-11 pr-4 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                                placeholder="Chỉ chữ cái, số, dấu gạch dưới">
+                        </div>
+                        {% if form.username.errors %}<p class="text-red-400 text-xs mt-1">{{ form.username.errors.0 }}</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Họ và Tên</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-id-card text-sm"></i></span>
+                            <input type="text" name="full_name" value="{{ form.full_name.value|default:'' }}"
+                                class="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 pl-11 pr-4 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                                placeholder="Nguyễn Văn A">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Email <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-envelope text-sm"></i></span>
+                            <input type="email" name="email" required value="{{ form.email.value|default:'' }}"
+                                class="w-full bg-gray-950 border {% if form.email.errors %}border-red-500/60{% else %}border-gray-800{% endif %} rounded-xl py-3 pl-11 pr-4 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                                placeholder="email@example.com">
+                        </div>
+                        {% if form.email.errors %}<p class="text-red-400 text-xs mt-1">{{ form.email.errors.0 }}</p>
+                        {% else %}<p class="text-gray-700 text-[10px] mt-1"><i class="fas fa-info-circle mr-1"></i>Mã OTP xác thực sẽ được gửi về đây</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Mật khẩu <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-lock text-sm"></i></span>
+                            <input type="password" name="password" required id="reg-pw"
+                                class="w-full bg-gray-950 border {% if form.password.errors %}border-red-500/60{% else %}border-gray-800{% endif %} rounded-xl py-3 pl-11 pr-12 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                                placeholder="Tối thiểu 6 ký tự">
+                            <button type="button" onclick="togglePw('reg-pw','reg-pw-icon')" class="absolute inset-y-0 right-4 flex items-center text-gray-600 hover:text-gray-400">
+                                <i class="fas fa-eye text-sm" id="reg-pw-icon"></i>
+                            </button>
+                        </div>
+                        {% if form.password.errors %}<p class="text-red-400 text-xs mt-1">{{ form.password.errors.0 }}</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Xác nhận mật khẩu <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-lock text-sm"></i></span>
+                            <input type="password" name="confirm_password" required id="reg-confirm"
+                                class="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 pl-11 pr-12 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                                placeholder="Nhập lại mật khẩu">
+                            <button type="button" onclick="togglePw('reg-confirm','reg-confirm-icon')" class="absolute inset-y-0 right-4 flex items-center text-gray-600 hover:text-gray-400">
+                                <i class="fas fa-eye text-sm" id="reg-confirm-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Demo bonus badge -->
+                    <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fas fa-gift text-indigo-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="text-indigo-300 text-xs font-bold">Ưu đãi chào mừng</div>
+                            <div class="text-gray-600 text-[11px]">Xác thực email → nhận ngay <b class="text-indigo-400">3 ngày dùng thử MIỄN PHÍ</b></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all duration-200 flex items-center justify-center gap-2 group">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                        <span>TẠO TÀI KHOẢN</span>
+                        <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </form>
+            </div>
+
+            <p class="text-center text-gray-600 text-sm mt-6">
+                Đã có tài khoản?
+                <a href="{% url 'login' %}" class="text-indigo-400 hover:text-indigo-300 font-bold ml-1 transition-colors">Đăng nhập →</a>
+            </p>
+        </div>
     </div>
 </div>
 
-<style>
-    @keyframes fade-in-up {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in-up { animation: fade-in-up 0.8s ease-out; }
-</style>
-{% endwith %}
+<script>
+function togglePw(id, iconId) {
+    const inp = document.getElementById(id);
+    const icon = document.getElementById(iconId);
+    const isText = inp.type === 'text';
+    inp.type = isText ? 'password' : 'text';
+    icon.className = isText ? 'fas fa-eye text-sm' : 'fas fa-eye-slash text-sm';
+}
+</script>
 {% endblock %}

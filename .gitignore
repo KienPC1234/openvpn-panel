@@ -221,3 +221,4 @@ vpn_panel.conf
 pids
 staticfiles
 formula
+settings.py

@@ -336,16 +336,16 @@ NPM_BIN_PATH = '/home/kien/.nvm/versions/node/v20.18.1/bin/npm'
 
 # ─── SMTP Email Configuration ────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'mail.fptoj.com'
+EMAIL_HOST = '[EMAIL_ADDRESS]'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'noreply@fptoj.com'
-EMAIL_HOST_PASSWORD = 'loroMAkellusTEenCUrmAssexONYalKH,_,60'
-DEFAULT_FROM_EMAIL = 'ShieldCall VN <noreply@fptoj.com>'
+EMAIL_HOST_USER = '[EMAIL_ADDRESS]'
+EMAIL_HOST_PASSWORD = '[PASSWORD]'
+DEFAULT_FROM_EMAIL = '[EMAIL_ADDRESS]'
 
 # ─── Web Push Configuration ──────────────────────────────────────────
 WEBPUSH_SETTINGS = {
-    "VAPID_PUBLIC_KEY": "BOiGUkv3fSP6_tTc9t2jl5zN841_Jtfc-Nhk0P_rTE6kDhN7j_bEzZkumSMtSq9cpT2QmGCfXOiPRDj2_Nes1s0",
-    "VAPID_PRIVATE_KEY": "61HyQrTetSvqqYsTW0thNO20mWtffPCkjlVQiTLgB-w",
-    "VAPID_ADMIN_EMAIL": "noreply@fptoj.com"
+    "VAPID_PUBLIC_KEY": "",
+    "VAPID_PRIVATE_KEY": "",
+    "VAPID_ADMIN_EMAIL": "[EMAIL_ADDRESS]"
 }

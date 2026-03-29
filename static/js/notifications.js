@@ -117,6 +117,16 @@ window.NotificationManager = {
             this.requestPermission();
         } else if (Notification.permission === 'granted') {
             this.ensureWebPushSubscription();
+            this.togglePushCard(false);
+        } else {
+            this.togglePushCard(false); // Hide if denied too to avoid clutter
+        }
+    },
+
+    togglePushCard(show) {
+        const card = document.getElementById('webpush-card');
+        if (card) {
+            card.style.display = show ? 'block' : 'none';
         }
     },
 
@@ -124,6 +134,7 @@ window.NotificationManager = {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             this.ensureWebPushSubscription();
+            this.togglePushCard(false);
             this.showReliableToast("Đã bật thông báo hệ thống", "success");
         }
     },

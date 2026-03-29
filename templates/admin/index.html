@@ -149,40 +149,63 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('trafficChart').getContext('2d');
         const dataRow = '{{ traffic_history|safe }}';
-        const data = dataRow ? JSON.parse(dataRow) : [];
+        let historyByIface = {};
+        try { historyByIface = dataRow ? JSON.parse(dataRow) : {}; } catch(e) {}
         
         const isDarkMode = document.documentElement.classList.contains('dark');
         const fontColor = isDarkMode ? '#94a3b8' : '#64748b';
         const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.05)' : 'rgba(100, 116, 139, 0.1)';
+        
+        const colorPalette = [
+            { rx: '#6366f1', rxBg: 'rgba(99, 102, 241, 0.1)', tx: '#ec4899' },
+            { rx: '#10b981', rxBg: 'rgba(16, 185, 129, 0.1)', tx: '#f59e0b' },
+            { rx: '#3b82f6', rxBg: 'rgba(59, 130, 246, 0.1)', tx: '#8b5cf6' }
+        ];
 
-        new Chart(ctx, {
+        function buildDatasets(historyObj) {
+            const datasets = [];
+            const interfaces = Object.keys(historyObj);
+            
+            interfaces.forEach((iface, index) => {
+                const history = historyObj[iface];
+                const rxData = history.map(h => h.rx / (1024 * 1024));
+                const txData = history.map(h => h.tx / (1024 * 1024));
+                const colors = colorPalette[index % colorPalette.length];
+
+                datasets.push({
+                    label: `${iface.toUpperCase()} Nhận (RX)`,
+                    data: rxData,
+                    borderColor: colors.rx,
+                    backgroundColor: colors.rxBg,
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: (index === 0 ? 4 : 2),
+                    pointRadius: (index === 0 ? 4 : 2),
+                    pointHoverRadius: 8,
+                });
+                datasets.push({
+                    label: `${iface.toUpperCase()} Gửi (TX)`,
+                    data: txData,
+                    borderColor: colors.tx,
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [8, 4],
+                    pointRadius: 0,
+                });
+            });
+            return datasets;
+        }
+
+        const initialInterfaces = Object.keys(historyByIface);
+        const initialLabels = initialInterfaces.length > 0 ? historyByIface[initialInterfaces[0]].map(h => h.time) : [];
+
+        const chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.map(i => i.time),
-                datasets: [
-                    {
-                        label: 'Tải xuống (RX)',
-                        data: data.map(i => i.rx / (1024 * 1024)),
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 4,
-                        pointRadius: 4,
-                        pointHoverRadius: 8,
-                    },
-                    {
-                        label: 'Tải lên (TX)',
-                        data: data.map(i => i.tx / (1024 * 1024)),
-                        borderColor: '#ec4899',
-                        backgroundColor: 'transparent',
-                        fill: false,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        borderDash: [8, 4],
-                        pointRadius: 0,
-                    }
-                ]
+                labels: initialLabels,
+                datasets: buildDatasets(historyByIface)
             },
             options: {
                 responsive: true,
@@ -207,6 +230,22 @@
                 }
             }
         });
+
+        setInterval(async () => {
+            try {
+                const res = await fetch('/admin/api/traffic/');
+                const newDataObj = await res.json();
+                const newInterfaces = Object.keys(newDataObj);
+                
+                if (newInterfaces.length > 0) {
+                    chart.data.labels = newDataObj[newInterfaces[0]].map(i => i.time);
+                    chart.data.datasets = buildDatasets(newDataObj);
+                    chart.update('none'); // Update without animation for smoother live data
+                }
+            } catch (e) {
+                console.error("Traffic update error:", e);
+            }
+        }, 4000);
     });
 </script>
 {% endblock %}

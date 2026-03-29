@@ -66,7 +66,7 @@
     </div>
 
     <!-- Main Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mt-8">
         <!-- Download Portal Card -->
         <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col justify-between shadow-sm">
             <div>
@@ -75,15 +75,27 @@
                 </div>
                 <h2 class="text-2xl font-bold text-white mb-3">Kết nối VPN của bạn</h2>
                 <p class="text-gray-400 mb-8 max-w-md">Tải xuống tệp .ovpn để bắt đầu sử dụng VPN. Tương thích với tất cả các ứng dụng OpenVPN.</p>
+                
+                {% if user.vpn_client %}
+                <div class="mb-6 p-4 bg-gray-950/50 border border-gray-800 rounded-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-500 font-bold uppercase tracking-wider">IP VPN Cá Nhân (LAN)</span>
+                        <span class="text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded">Sẵn sàng</span>
+                    </div>
+                    <div class="text-2xl font-mono font-bold text-blue-400 tracking-wider">
+                        {{ user.vpn_client.ip_address|default:"10.8.0.x" }}
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-4 mt-auto">
+            <div class="flex flex-col sm:flex-row gap-4">
                 {% if user.vpn_client %}
                     <a href="{% url 'download_ovpn' user.vpn_client.pk %}" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md">
-                        <i class="fas fa-download"></i> TẢI FILE CẤU HÌNH (.OVPN)
+                        <i class="fas fa-download"></i> TẢI FILE (.OVPN)
                     </a>
                     <a href="{% url 'installer_download' %}" class="flex items-center justify-center gap-2 bg-gray-800 text-white font-bold px-6 py-3.5 rounded-xl border border-gray-700 hover:bg-gray-700 transition-all">
-                        <i class="fas fa-laptop"></i> Cài App
+                        <i class="fas fa-laptop"></i> App
                     </a>
                 {% else %}
                     <div class="flex-1 flex flex-col items-center justify-center p-6 bg-gray-800/30 border border-dashed border-gray-700 rounded-xl">
@@ -102,21 +114,44 @@
             <div class="space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-gray-800">
                     <span class="text-gray-500 text-sm">Gói cước</span>
-                    <span class="text-blue-400 font-bold">{{ user.plan_type }}</span>
+                    <span class="text-green-400 font-bold">Đang hoạt động</span>
                 </div>
                 <div class="flex items-center justify-between pb-3 border-b border-gray-800">
                     <span class="text-gray-500 text-sm">Hết hạn</span>
                     <span class="text-white font-bold">{{ user.expiry_date|date:"d/m/Y"|default:"Vĩnh viễn" }}</span>
                 </div>
                 <div class="pt-4 text-center">
-                    <div class="text-5xl font-black text-white leading-tight">{{ user.remaining_days }}</div>
+                    <div class="text-5xl font-black text-white leading-tight">
+                        {% if user.remaining_days > 900000 %}
+                            <span class="text-3xl">Vĩnh viễn</span>
+                        {% else %}
+                            {{ user.remaining_days }}
+                        {% endif %}
+                    </div>
                     <div class="text-[10px] text-gray-500 uppercase font-black mt-1 tracking-widest">Ngày còn lại</div>
                 </div>
             </div>
         </div>
+
+        <!-- Gaming & LAN Support -->
+        <div class="bg-gradient-to-br from-indigo-900/40 to-gray-900 border border-indigo-500/20 rounded-2xl p-8 shadow-sm relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 text-indigo-500/10 text-8xl transition-transform group-hover:scale-110">
+                <i class="fas fa-gamepad"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 relative">
+                <i class="fas fa-vr-cardboard text-indigo-400"></i> Gaming LAN
+            </h3>
+            <p class="text-sm text-gray-400 leading-relaxed mb-6 relative">
+                Hệ thống hỗ trợ mạng LAN ảo. Bạn có thể chơi <b>Minecraft</b>, <b>CSGO</b>, hoặc các game LAN khác cùng bạn bè bằng cách sử dụng <b>VPN IP</b> ở trên làm địa chỉ máy chủ.
+            </p>
+            <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl relative">
+                <span class="text-[10px] uppercase font-black text-indigo-300 tracking-widest">Mẹo:</span>
+                <p class="text-xs text-indigo-200/80 mt-1 italic">Dùng IP 10.8.0.x để kết nối trực tiếp.</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Analytics Section -->
+    <!-- Analytics & Proof Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         <div class="lg:col-span-2 space-y-6">
             <div id="stats-container" hx-get="{% url 'stats_partial' %}" hx-trigger="load, every 30s" hx-swap="innerHTML">
@@ -135,13 +170,39 @@
         </div>
 
         <div class="space-y-6">
-            <!-- Simple Notification Card -->
-            <div class="bg-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-500/20">
-                <h4 class="font-bold mb-2 flex items-center gap-2">
-                    <i class="fas fa-bell"></i> Thông báo
+            <!-- Data Protection Proof -->
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-sm">
+                <h4 class="font-bold text-white mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <i class="fas fa-user-shield text-green-500"></i> Chứng chỉ Bảo mật
                 </h4>
-                <p class="text-blue-100 text-xs mb-4">Nhận cập nhật về gói cước và bảo trì hệ thống.</p>
-                {% webpush_button with_class="w-full bg-white text-blue-600 font-bold py-2.5 rounded-xl text-xs transition-colors" %}
+                <div class="space-y-3">
+                    <div class="flex gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1 text-xs"></i>
+                        <p class="text-xs text-gray-400">Dữ liệu được mã hóa chuẩn quân đội <b>AES-128-GCM</b>.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1 text-xs"></i>
+                        <p class="text-xs text-gray-400">Hệ thống <b>No-Log</b>: Chúng tôi không lưu trữ lịch sử duyệt web của bạn.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1 text-xs"></i>
+                        <p class="text-xs text-gray-400">Mật khẩu được mã hóa một chiều (PBKDF2) cực kỳ an toàn.</p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-6 border-t border-gray-800 flex justify-center">
+                    <i class="fas fa-fingerprint text-gray-700 text-3xl"></i>
+                </div>
+            </div>
+
+            <!-- Community Group Card -->
+            <div id="group-card" class="bg-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-500/20">
+                <h4 class="font-bold mb-2 flex items-center gap-2">
+                    <i class="fas fa-users"></i> Nhóm Hỗ Trợ
+                </h4>
+                <p class="text-blue-100 text-xs mb-4">Tham gia cộng đồng để nhận cập nhật và hỗ trợ nhanh nhất.</p>
+                <a href="https://m.me/j/AbZ9i1aQQxu73tXM/" target="_blank" class="block w-full text-center bg-white text-blue-600 font-bold py-2.5 rounded-xl text-xs transition-colors hover:bg-gray-100">
+                   🚀 THAM GIA NGAY
+                </a>
             </div>
         </div>
     </div>
@@ -182,43 +243,54 @@
         const dataTag = document.getElementById('traffic-data');
         if (!dataTag) return;
         
-        const history = JSON.parse(dataTag.textContent);
-        const labels = history.map(h => h.time);
-        const rxData = history.map(h => h.rx / (1024 * 1024));
-        const txData = history.map(h => h.tx / (1024 * 1024));
+        const historyByIface = JSON.parse(dataTag.textContent);
+        const interfaces = Object.keys(historyByIface);
+        if (interfaces.length === 0) return;
+        
+        // Use the first interface's timestamps for X-axis labels
+        const labels = historyByIface[interfaces[0]].map(h => h.time);
+        
+        const colorPalette = [
+            { rx: getThemeColor('primary', '500'), rxBg: getThemeColor('primary', '500', 0.1), tx: '#ec4899' },
+            { rx: getThemeColor('green', '500'), rxBg: getThemeColor('green', '500', 0.1), tx: '#f59e0b' },
+            { rx: '#0ea5e9', rxBg: 'rgba(14, 165, 233, 0.1)', tx: '#8b5cf6' }
+        ];
+
+        let datasets = [];
+        interfaces.forEach((iface, index) => {
+            const history = historyByIface[iface];
+            const rxData = history.map(h => h.rx / (1024 * 1024));
+            const txData = history.map(h => h.tx / (1024 * 1024));
+            const colors = colorPalette[index % colorPalette.length];
+
+            datasets.push({
+                label: `${iface.toUpperCase()} Nhận (RX)`,
+                data: rxData,
+                borderColor: colors.rx,
+                backgroundColor: colors.rxBg,
+                fill: true,
+                tension: 0.4,
+                borderWidth: (index === 0 ? 3 : 2),
+                pointRadius: 0
+            });
+            datasets.push({
+                label: `${iface.toUpperCase()} Gửi (TX)`,
+                data: txData,
+                borderColor: colors.tx,
+                backgroundColor: 'transparent',
+                fill: false,
+                tension: 0.4,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0
+            });
+        });
 
         if (!trafficChart) {
             const ctx = document.getElementById('trafficChart').getContext('2d');
-            const primaryColor = getThemeColor('primary', '500');
-
             trafficChart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Tải xuống (RX)',
-                            data: rxData,
-                            borderColor: primaryColor,
-                            backgroundColor: getThemeColor('primary', '500', 0.1),
-                            fill: true,
-                            tension: 0.4,
-                            borderWidth: 2,
-                            pointRadius: 0
-                        },
-                        {
-                            label: 'Tải lên (TX)',
-                            data: txData,
-                            borderColor: '#ec4899',
-                            backgroundColor: 'transparent',
-                            fill: false,
-                            tension: 0.4,
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            pointRadius: 0
-                        }
-                    ]
-                },
+                data: { labels: labels, datasets: datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -245,8 +317,7 @@
             });
         } else {
             trafficChart.data.labels = labels;
-            trafficChart.data.datasets[0].data = rxData;
-            trafficChart.data.datasets[1].data = txData;
+            trafficChart.data.datasets = datasets;
             trafficChart.update('none');
         }
     }
