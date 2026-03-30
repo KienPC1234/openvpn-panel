@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Xác thực Email | VPN Manager{% endblock %}
+{% load i18n %}
+{% block title %}{% trans 'Xác thực Email' %} | {{ site_name }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex">
@@ -11,21 +12,21 @@
             <div class="absolute inset-0 opacity-[0.025]" style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:48px 48px;"></div>
         </div>
         <div class="relative z-10">
-            <div class="text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">Xác thực an toàn</div>
+            <div class="text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">{% trans 'Xác thực an toàn' %}</div>
             <h2 class="text-5xl font-black text-white leading-tight tracking-tight mb-6">
-                Gần xong<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">rồi!</span>
+                {% trans 'Gần xong' %}<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">{% trans 'rồi!' %}</span>
             </h2>
-            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">Bước xác thực email đảm bảo tài khoản của bạn được bảo vệ và ngăn chặn đăng ký trái phép.</p>
+            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">{% trans 'Bước xác thực email đảm bảo tài khoản của bạn được bảo vệ và ngăn chặn đăng ký trái phép.' %}</p>
 
             <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5">
                 <div class="flex items-center gap-3 mb-3">
                     <div class="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
                         <i class="fas fa-gift text-green-400 text-sm"></i>
                     </div>
-                    <span class="text-white font-bold text-sm">Phần thưởng chờ bạn</span>
+                    <span class="text-white font-bold text-sm">{% trans 'Phần thưởng chờ bạn' %}</span>
                 </div>
-                <p class="text-gray-500 text-sm">Sau khi xác thực thành công, tài khoản sẽ được kích hoạt ngay với <span class="text-green-400 font-bold">3 ngày dùng thử MIỄN PHÍ</span>.</p>
+                <p class="text-gray-500 text-sm">{% trans 'Sau khi xác thực thành công, tài khoản sẽ được kích hoạt ngay với' %} <span class="text-green-400 font-bold">{% trans '3 ngày dùng thử MIỄN PHÍ' %}</span>.</p>
             </div>
         </div>
     </div>
@@ -36,14 +37,14 @@
 
             <!-- Icon -->
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-600/10 border border-blue-500/20 mb-4 relative">
-                    <i class="fas fa-envelope-open-text text-4xl text-blue-400"></i>
-                    <span class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                        <i class="fas fa-check text-[9px] text-white"></i>
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/5 border border-white/10 mb-4 p-4 relative">
+                    <img src="{{ site_logo_base64|default:site_logo }}" alt="Logo" class="w-full h-full object-contain">
+                    <span class="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-check text-[10px] text-white"></i>
                     </span>
                 </div>
-                <h1 class="text-2xl font-black tracking-tight text-white">Xác thực Email</h1>
-                <p class="text-gray-500 mt-1 text-sm">Chúng tôi đã gửi mã 6 chữ số đến</p>
+                <h1 class="text-2xl font-black tracking-tight text-white">{% trans 'Xác thực Email' %}</h1>
+                <p class="text-gray-500 mt-1 text-sm">{% trans 'Chúng tôi đã gửi mã 6 chữ số đến' %}</p>
                 {% if email %}
                 <p class="text-blue-400 font-bold text-sm mt-0.5">{{ email }}</p>
                 {% endif %}
@@ -63,7 +64,7 @@
                     {% csrf_token %}
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4 text-center">Nhập mã xác thực OTP</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4 text-center">{% trans 'Nhập mã xác thực OTP' %}</label>
                         <!-- 6 Digit boxes -->
                         <div class="flex gap-2 justify-center" id="otp-boxes">
                             <input type="text" maxlength="1" class="otp-digit w-11 h-13 bg-gray-950 border-2 border-gray-700 rounded-xl text-white text-2xl font-black text-center focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all" inputmode="numeric" style="height:3.25rem">
@@ -76,21 +77,21 @@
                         <input type="hidden" name="otp" id="otp-value">
 
                         <p class="text-center text-gray-600 text-xs mt-3">
-                            <i class="fas fa-clock mr-1"></i>Mã có hiệu lực trong
+                            <i class="fas fa-clock mr-1"></i>{% trans 'Mã có hiệu lực trong' %}
                             <span id="countdown" class="text-gray-400 font-bold">10:00</span>
                         </p>
                     </div>
 
                     <button type="submit" id="verify-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center justify-center gap-2">
                         <i class="fas fa-check-circle"></i>
-                        <span>XÁC THỰC EMAIL</span>
+                        <span>{% trans 'XÁC THỰC EMAIL' %}</span>
                     </button>
                 </form>
 
                 <div class="mt-6 pt-5 border-t border-gray-800 text-center">
-                    <p class="text-gray-600 text-sm">Không nhận được email?</p>
+                    <p class="text-gray-600 text-sm">{% trans 'Không nhận được email?' %}</p>
                     <a href="{% url 'register' %}" class="text-blue-400 hover:text-blue-300 text-sm font-bold transition-colors mt-1 inline-block">
-                        <i class="fas fa-redo text-xs mr-1"></i>Đăng ký lại
+                        <i class="fas fa-redo text-xs mr-1"></i>{% trans 'Đăng ký lại' %}
                     </a>
                 </div>
             </div>

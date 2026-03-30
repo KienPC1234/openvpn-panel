@@ -18,8 +18,9 @@ class LockedMiddleware:
             ip = request.META.get('REMOTE_ADDR')
 
         # Check if this IP belongs to a locked client
-        client = Client.objects.filter(ip_address=ip, is_locked=True).first()
-        if client:
-            return render(request, 'locked.html')
+        # DEPRECATED: We now show the lock status directly on the dashboard instead of blocking the whole site
+        # client = Client.objects.filter(ip_address=ip, is_locked=True).first()
+        # if client:
+        #     return render(request, 'locked.html')
 
         return self.get_response(request)

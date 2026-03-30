@@ -4,6 +4,7 @@ from .services import VPNService
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _, gettext
 from django.core.mail import send_mail
+from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,9 +28,8 @@ def collect_traffic_stats():
                             tx_bytes=int(parts[9])
                         )
             
-            # Retention: keep last N snapshots per interface
-            # With 10s intervals, 600 snaps = 100 minutes of history
-            retention = int(VPNService.get_vpn_setting('TRAFFIC_SNAPSHOT_RETENTION', '600'))
+            # Retention: keep last N snapshots per interface (Default: 200)
+            retention = int(VPNService.get_vpn_setting('TRAFFIC_SNAPSHOT_RETENTION', '200'))
             for iface in interfaces:
                 ids_to_keep = TrafficSnapshot.objects.filter(interface=iface).order_by('-timestamp').values_list('id', flat=True)[:retention]
                 TrafficSnapshot.objects.filter(interface=iface).exclude(id__in=list(ids_to_keep)).delete()
@@ -68,26 +68,49 @@ def sync_user_statuses():
     stats = {"locked": 0, "warned": 0, "synced": 0}
 
     for user in users:
-        # 1. Automatic Lock: 3 days after expiry
-        if user.expiry_date and user.expiry_date < (today - timedelta(days=3)):
+        # Determine the date relative to expiry
+        if not user.expiry_date:
+            continue
+            
+        # 1. CRITICAL: 3 Days After Expiry -> UNLOCK grace period is over, LOCK NOW
+        if user.expiry_date == (today - timedelta(days=3)):
             if user.is_vpn_enabled:
                 user.is_vpn_enabled = False
                 user.save(update_fields=['is_vpn_enabled'])
                 stats["locked"] += 1
                 
-                # Push Notification for Expiry
+                # Push Notification
                 payload = {
-                    "head": "Tài khoản hết hạn 🔴",
-                    "body": f"Tài khoản {user.username} đã hết hạn quá 3 ngày và bị khóa. Vui lòng gia hạn ngay!",
+                    "head": "Tài khoản bị khóa 🔴",
+                    "body": f"Tài khoản {user.username} đã hết hạn quá 3 ngày và đã bị khóa tự động.",
                     "icon": "/static/images/logo.png"
                 }
                 try:
-                    logger.info(f"Sending expiry webpush to user {user.username}")
                     send_user_notification(user=user, payload=payload, ttl=3600)
                 except Exception as e:
-                    logger.error(f"Failed to send expiry webpush to {user.username}: {e}")
+                    logger.error(f"Failed to send locked webpush to {user.username}: {e}")
+                
+                # Email Notification
+                if user.email:
+                    subject = "Thông báo: Tài khoản VPN của bạn đã bị KHÓA"
+                    message = f"Xin chào {user.full_name or user.username},\n\nTài khoản VPN của bạn đã hết hạn vào ngày {user.expiry_date.strftime('%d/%m/%Y')} (đã quá hạn 3 ngày).\n\nHệ thống đã thực hiện khóa dịch vụ tự động. Vui lòng thực hiện gia hạn để tiếp tục sử dụng.\n\nTrân trọng,\nĐội ngũ {VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')}"
+                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
-        # 2. Expiry Warning: Exactly 3 days before
+        # 2. GRACE PERIOD: 1 Day After Expiry -> Reminder that they have 2 days left
+        elif user.expiry_date == (today - timedelta(days=1)):
+             if user.email:
+                subject = "Lưu ý: Tài khoản VPN của bạn đã hết hạn"
+                message = f"Xin chào {user.full_name or user.username},\n\nTài khoản VPN của bạn đã hết hạn từ hôm qua ({user.expiry_date.strftime('%d/%m/%Y')}).\n\nBạn đang nằm trong thời gian gia hạn 3 ngày. Sau 2 ngày nữa, nếu không gia hạn, hệ thống sẽ tự động khóa tài khoản.\n\nHãy gia hạn sớm nhé!\n\nTrân trọng,\n{VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')}"
+                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+
+        # 3. EXPIRY DAY: Notification ON the day it expires
+        elif user.expiry_date == today:
+             if user.email:
+                subject = "Thông báo: Tài khoản VPN của bạn hết hạn hôm nay"
+                message = f"Xin chào {user.full_name or user.username},\n\nDịch vụ VPN của bạn sẽ hết hạn vào cuối ngày hôm nay ({user.expiry_date.strftime('%d/%m/%Y')}).\n\nBạn sẽ có thêm 3 ngày gia hạn trước khi hệ thống thực hiện khóa tài khoản.\n\nChúc bạn một ngày tốt lành!\n\n{VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')}"
+                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+
+        # 4. PRE-EXPIRY WARNING: 3 Days Before
         elif user.expiry_date == warning_date:
             # Push Notification
             payload = {
@@ -96,7 +119,6 @@ def sync_user_statuses():
                 "icon": "/static/images/logo.png"
             }
             try:
-                logger.info(f"Sending warning webpush to user {user.username}")
                 send_user_notification(user=user, payload=payload, ttl=3600)
             except Exception as e:
                 logger.error(f"Failed to send warning webpush to {user.username}: {e}")
@@ -104,11 +126,11 @@ def sync_user_statuses():
             # Email Notification
             if user.email:
                 subject = "Thông báo: Tài khoản VPN của bạn sắp hết hạn"
-                message = f"Xin chào {user.full_name or user.username},\n\nĐây là thông báo nhắc nhở tài khoản VPN của bạn sẽ hết hạn vào ngày {user.expiry_date.strftime('%d/%m/%Y')} (trong 3 ngày tới).\n\nVui lòng gia hạn sớm để tránh bị gián đoạn dịch vụ.\n\nTrân trọng,\nĐội ngũ {VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')}"
+                message = f"Xin chào {user.full_name or user.username},\n\nĐây là thông báo nhắc nhở tài khoản VPN của bạn sẽ hết hạn vào ngày {user.expiry_date.strftime('%d/%m/%Y')} (trong 3 ngày tới).\n\nVui lòng gia hạn sớm để tránh bị gián đoạn dịch vụ.\n\nTrân trọng,\n{VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')}"
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
             stats["warned"] += 1
 
-        # 3. Regular Status Sync
+        # 5. Regular Status Sync (ensures status field matches expiry logic)
         user.save()
         stats["synced"] += 1
     
@@ -191,3 +213,107 @@ def send_bulk_announcement(announcement_id):
     except Exception as e:
         logger.error(f"Failed to broadcast announcement: {e}")
         return str(e)
+@shared_task
+def send_welcome_email_task(user_pk, password, site_url, is_admin, email=None):
+    from .models import CustomUser
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+    from django.core.mail import send_mail
+    
+    user = CustomUser.objects.filter(pk=user_pk).first()
+    target_email = email or (user.email if user and user.email else None)
+    
+    if not (user or email) or not target_email:
+        return f"User or email not found (PK: {user_pk}, Email Param: {email})"
+        
+    try:
+        site_name = VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')
+        footer_text = VPNService.get_vpn_setting('FOOTER_TEXT', 'VPN Management System')
+        
+        html_content = render_to_string('emails/welcome_email.html', {
+            'username': user.username,
+            'password': password,
+            'full_name': user.full_name or user.username,
+            'site_url': site_url,
+            'is_admin': is_admin,
+            'site_name': site_name,
+            'footer_text': footer_text
+        })
+        
+        send_mail(
+            subject=f'Chào mừng tới {site_name}!',
+            message=strip_tags(html_content),
+            from_email=None, 
+            recipient_list=[target_email],
+            html_message=html_content,
+            fail_silently=False
+        )
+        return f"Welcome email sent to {target_email}"
+    except Exception as e:
+        logger.error(f"Failed to send welcome email to {target_email}: {e}")
+        return str(e)
+
+@shared_task
+def send_upcoming_expiry_warnings():
+    """Wrapper that triggers sync_user_statuses specifically for warnings/locking checks."""
+    return sync_user_statuses()
+
+@shared_task
+def cleanup_system_data():
+    """Manual trigger to cleanup old logs and snapshots."""
+    from .models import TaskLog, TrafficSnapshot
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    
+    # 1. Clean old TaskLogs
+    task_count, _ = TaskLog.objects.filter(started_at__lt=thirty_days_ago).delete()
+    
+    # 2. Clean old TrafficSnapshots (besides the retention per interface)
+    snap_count, _ = TrafficSnapshot.objects.filter(timestamp__lt=thirty_days_ago).delete()
+    
+    return f"Cleanup complete: {task_count} task logs and {snap_count} old snapshots removed."
+
+@shared_task
+def run_system_task_exec(task_type):
+    from .models import TaskLog
+    from django.utils import timezone
+    from .services import VPNService
+    
+    # Pre-fetch task functions
+    from .tasks import sync_user_statuses, collect_traffic_stats, send_upcoming_expiry_warnings, cleanup_system_data
+    
+    log = TaskLog.objects.create(task_name=f"Run: {task_type}")
+    try:
+        if task_type == 'sync_user_statuses':
+            log.result = sync_user_statuses()
+        elif task_type == 'collect_traffic_stats':
+            log.result = collect_traffic_stats()
+        elif task_type == 'send_expiry_warnings':
+            log.result = send_upcoming_expiry_warnings()
+        elif task_type == 'cleanup_data':
+            log.result = cleanup_system_data()
+        elif task_type == 'sync_system_users':
+            created, skipped = VPNService.sync_system_users()
+            log.result = f"Sync VPN: {created} created, {skipped} skipped."
+        elif task_type == 'rebuild_all_ovpn':
+            from .models import CustomUser
+            users = CustomUser.objects.filter(vpn_client__isnull=False)
+            count = 0
+            for user in users:
+                if VPNService.create_ovpn_file(user.username):
+                    count += 1
+            log.result = f"Rebuild all: {count}/{users.count()} rebuilt."
+        else:
+            log.result = "Unknown task type."
+            
+        log.status = 'SUCCESS'
+    except Exception as e:
+        log.status = 'FAILURE'
+        log.error = str(e)
+    finally:
+        log.finished_at = timezone.now()
+        log.save()
+        
+    return log.result or log.error

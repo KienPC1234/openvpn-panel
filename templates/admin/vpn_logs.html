@@ -60,7 +60,7 @@
     <div class="bg-gray-950 rounded-lg shadow-xl border border-gray-800 overflow-hidden">
         <div id="log-container" 
              class="p-4 h-[70vh] overflow-y-auto"
-             hx-get="{% url 'admin_vpn_logs_content' %}?service=openvpn&lines=150" 
+             hx-get="{% url 'admin_vpn_logs_content' %}?service=openvpn&lines=100" 
              hx-trigger="every 3s, load"
              hx-swap="innerHTML">
             
@@ -91,7 +91,7 @@
 
         // Update HTMX attributes
         const container = document.getElementById('log-container');
-        container.setAttribute('hx-get', `{% url "admin_vpn_logs_content" %}?service=${service}&lines=150`);
+        container.setAttribute('hx-get', `{% url "admin_vpn_logs_content" %}?service=${service}&lines=100`);
         
         // Clear log container to show loading
         container.innerHTML = `

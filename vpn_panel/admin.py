@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group, User
 from django.utils.translation import gettext_lazy as _
@@ -10,12 +10,13 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.conf import settings
 from django.db.models import Sum
-from .models import CustomUser, Client, UsageLog, Setting, TrafficSnapshot, OTPCode, VPNConfig, Subscription, Announcement
+from .models import CustomUser, Client, UsageLog, Setting, TrafficSnapshot, OTPCode, VPNConfig, Subscription, Announcement, TaskLog, TaskControl, SystemLog
 from .services import VPNService
 from django.utils import timezone
-from .tasks import send_bulk_announcement
+from .tasks import send_bulk_announcement, send_welcome_email_task
 from datetime import timedelta, date
 from unfold.admin import ModelAdmin, TabularInline
+from unfold.decorators import action as unfold_action
 from django.utils.translation import activate, get_language
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -113,8 +114,22 @@ def sync_users_action(modeladmin, request, queryset):
     created, skipped = VPNService.sync_system_users()
     messages.success(request, f"Đồng bộ hoàn tất: {created} mới, {skipped} đã tồn tại.")
 
+from django import forms
+
+class CustomUserForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'email' in self.fields:
+            self.fields['email'].required = True
+            self.fields['email'].label = "Email (Bắt buộc để gửi tài khoản)"
+    
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'full_name', 'status', 'is_vpn_enabled', 'purchase_date', 'duration_days', 'balance', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+
 @admin.register(CustomUser)
 class CustomUserAdmin(ModelAdmin):
+    form = CustomUserForm
     fieldsets = (
         (None, {'fields': ('username', 'email', 'full_name', 'status', 'is_vpn_enabled', 'password_reset_link')}),
         (_('Gói cước & Thanh toán'), {
@@ -136,6 +151,7 @@ class CustomUserAdmin(ModelAdmin):
         'unlock_vpn_action'
     ]
     changelist_actions = ('sync_users_action_local',)
+    actions_detail = ('resend_welcome_email_action',)
 
     def cleanup_no_ovpn_users(self, request):
         if request.method != "POST":
@@ -189,39 +205,42 @@ class CustomUserAdmin(ModelAdmin):
             old_email = old_inst.email or ""
             old_vpn_enabled = old_inst.is_vpn_enabled
 
-        super().save_model(request, obj, form, change)
-        
-        # Scenario: Admin updates email for a user with NO email
-        if not is_new and not old_email and obj.email:
-            # Generate random password
+        if obj.email and (is_new or old_email != obj.email):
+            # Generate random password BEFORE saving if new, so it's hashed correctly
+            # OR after super().save_model and then save(update_fields=['password'])
+            # Since AbstractUser has logic in save(), it's better to do it before
+            # BUT if we do it before, super().save_model will save the hashed password
+            # If we do it after, we need to save() again.
+            
+            # 1. Generate random password
             alphabet = string.ascii_letters + string.digits
             new_password = ''.join(secrets.choice(alphabet) for _ in range(12))
             obj.set_password(new_password)
-            obj.save(update_fields=['password'])
-            
-            # Send welcome email
+            # We don't save yet, super().save_model will do it.
+        else:
+            new_password = None
+
+        super().save_model(request, obj, form, change)
+        
+        # Scenario: Admin creates a NEW user with email OR updates an existing email
+        if obj.email and (is_new or old_email != obj.email):
+            # Send welcome email (using the captured new_password) via Celery
             try:
                 scheme = 'https' if request.is_secure() else 'http'
                 site_url = f"{scheme}://{request.get_host()}"
                 
-                html_content = render_to_string('emails/welcome_email.html', {
-                    'username': obj.username,
-                    'password': new_password,
-                    'full_name': obj.full_name or obj.username,
-                    'site_url': site_url
-                })
+                # Use on_commit to ensure task runs AFTER DB write is finished (fixes race condition)
+                transaction.on_commit(lambda: send_welcome_email_task.delay(
+                    obj.pk, 
+                    new_password, 
+                    site_url, 
+                    (obj.is_staff or obj.is_superuser),
+                    email=obj.email # Pass email as direct param as fallback for race condition
+                ))
                 
-                send_mail(
-                    subject='Chào mừng tới VPN Panel!',
-                    message=strip_tags(html_content),
-                    from_email=None, 
-                    recipient_list=[obj.email],
-                    html_message=html_content,
-                    fail_silently=True
-                )
-                messages.success(request, f"Đã gửi email thông tin tài khoản (với mật khẩu tự động: {new_password}) tới {obj.email}")
+                messages.success(request, f"Đang gửi email thông tin tài khoản (với mật khẩu tự động: {new_password}) tới {obj.email} qua nền celery...")
             except Exception as e:
-                messages.error(request, f"Lỗi gửi email chào mừng: {str(e)}")
+                messages.error(request, f"Lỗi lên lịch gửi email: {str(e)}")
 
         # If toggled or new, sync with system
         if is_new or old_vpn_enabled != obj.is_vpn_enabled:
@@ -234,7 +253,9 @@ class CustomUserAdmin(ModelAdmin):
                 success, result = VPNService.add_client(obj.username)
                 if success:
                     from .models import Client
-                    Client.objects.get_or_create(user=obj, name=obj.username, defaults={'has_ovpn_file': True})
+                    client, _ = Client.objects.get_or_create(user=obj, defaults={'name': obj.username})
+                    client.has_ovpn_file = True
+                    client.save()
                     messages.success(request, f"Đã tự động tạo chứng chỉ VPN cho {obj.username}")
                 else:
                     messages.error(request, f"Lỗi tạo chứng chỉ VPN: {result}")
@@ -246,6 +267,34 @@ class CustomUserAdmin(ModelAdmin):
             if VPNService.create_ovpn_file(user.username):
                 count += 1
         messages.success(request, f"Đã tạo lại {count} file .ovpn.")
+
+    @unfold_action(description='Gửi lại Email Chào mừng (Reset lại mật khẩu)')
+    def resend_welcome_email_action(self, request, object_id):
+        obj = self.get_object(request, object_id)
+        # 1. Generate random password
+        alphabet = string.ascii_letters + string.digits
+        new_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+        obj.set_password(new_password)
+        obj.save(update_fields=['password'])
+
+        # 2. Schedule email task on commit
+        try:
+            scheme = 'https' if request.is_secure() else 'http'
+            site_url = f"{scheme}://{request.get_host()}"
+            
+            transaction.on_commit(lambda: send_welcome_email_task.delay(
+                obj.pk,
+                new_password,
+                site_url,
+                (obj.is_staff or obj.is_superuser),
+                email=obj.email # Fallback for race condition
+            ))
+            
+            messages.success(request, f"Đang gửi lại email chào mừng tới {obj.email} (Mật khẩu mới: {new_password}) qua nền celery...")
+        except Exception as e:
+            messages.error(request, f"Lỗi lên lịch gửi: {str(e)}")
+            
+        return redirect('admin:vpn_panel_customuser_change', object_id)
 
     @admin.action(description='THU HỒI chứng chỉ (Revoke)')
     def revoke_cert_action(self, request, queryset):
@@ -296,7 +345,9 @@ class CustomUserAdmin(ModelAdmin):
         
         success, result = VPNService.add_client(user.username)
         if success:
-            Client.objects.get_or_create(user=user, name=user.username, defaults={'has_ovpn_file': True})
+            client, _ = Client.objects.get_or_create(user=user, defaults={'name': user.username})
+            client.has_ovpn_file = True
+            client.save()
             messages.success(request, f"Đã cấp phát file OVPN cho {user.username} thành công.")
         else:
             messages.error(request, f"Lỗi cấp phát: {result}")
@@ -312,7 +363,26 @@ class CustomUserAdmin(ModelAdmin):
 
     @admin.display(description='Hành động')
     def vpn_actions(self, obj):
-        has_ovpn = hasattr(obj, 'vpn_client') and obj.vpn_client.has_ovpn_file
+        has_client = hasattr(obj, 'vpn_client')
+        has_ovpn = False
+        
+        if has_client:
+            # 1. Check DB flag
+            if obj.vpn_client.has_ovpn_file:
+                has_ovpn = True
+            # 2. Check if user has an assigned IP (means they have a cert/ovpn)
+            elif obj.vpn_client.ip_address:
+                has_ovpn = True
+                obj.vpn_client.has_ovpn_file = True
+                obj.vpn_client.save(update_fields=['has_ovpn_file'])
+            # 3. Check disk as last resort
+            else:
+                ovpn_path = settings.VPN_SETTINGS['OVPN_OUT_DIR'] / f"{obj.username}.ovpn"
+                if ovpn_path.exists():
+                    has_ovpn = True
+                    obj.vpn_client.has_ovpn_file = True
+                    obj.vpn_client.save(update_fields=['has_ovpn_file'])
+        
         is_sys_locked = VPNService.is_user_locked(obj.username)
         
         # If DB says disabled OR system says locked -> Button should be "Mở"
@@ -430,7 +500,9 @@ class SubscriptionAdmin(ModelAdmin):
             success, result = VPNService.add_client(obj.username)
             if success:
                 from .models import Client
-                Client.objects.get_or_create(user=obj, name=obj.username, defaults={'has_ovpn_file': True})
+                client, _ = Client.objects.get_or_create(user=obj, defaults={'name': obj.username})
+                client.has_ovpn_file = True
+                client.save()
                 messages.success(request, f"Đã tự động tạo chứng chỉ VPN cho {obj.username}")
             else:
                 messages.error(request, f"Lỗi tạo chứng chỉ VPN: {result}")
@@ -620,7 +692,7 @@ class AnnouncementAdmin(ModelAdmin):
         return custom_urls + urls
 
     def trigger_send_announcement(self, request, announcement_id):
-        from .tasks import send_bulk_announcement
+        from .tasks import send_bulk_announcement, send_welcome_email_task
         send_bulk_announcement.delay(announcement_id)
         messages.success(request, "Đã bắt đầu gửi thông báo tới toàn bộ người dùng qua Celery.")
         return redirect('admin:vpn_panel_announcement_changelist')
@@ -630,3 +702,63 @@ class AnnouncementAdmin(ModelAdmin):
         for ann in queryset:
             send_bulk_announcement.delay(ann.pk)
         messages.success(request, f"Đã hàng đợi gửi {queryset.count()} thông báo.")
+
+@admin.register(TaskLog)
+class TaskLogAdmin(ModelAdmin):
+    list_display = ('task_name', 'status', 'started_at', 'duration', 'result_short')
+    list_filter = ('status', 'task_name')
+    readonly_fields = ('task_name', 'status', 'result', 'error', 'started_at', 'finished_at')
+    
+    @admin.display(description='Kết quả')
+    def result_short(self, obj):
+        res = obj.result or obj.error
+        if res and len(res) > 80:
+            return res[:80] + "..."
+        return res
+
+@admin.register(TaskControl)
+class TaskControlAdmin(ModelAdmin):
+    def has_add_permission(self, request): return False
+    def has_delete_permission(self, request, obj=None): return False
+    
+    def changelist_view(self, request, extra_context=None):
+        from .models import TaskLog
+        from .tasks import run_system_task_exec
+        
+        if request.method == 'POST':
+            task_type = request.POST.get('task_type')
+            if task_type:
+                # Run the task through the wrapper
+                run_system_task_exec.delay(task_type)
+                messages.success(request, f"Đã bắt đầu tác vụ '{task_type}' trong nền... Kiểm tra nhật ký bên dưới để xem kết quả.")
+            return redirect('admin:vpn_panel_taskcontrol_changelist')
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Điều khiển & Gỡ lỗi Hệ thống',
+            'logs': TaskLog.objects.all()[:30], # Show last 30 logs
+        }
+        return TemplateResponse(request, "admin/task_control.html", context)
+
+@admin.register(SystemLog)
+class SystemLogAdmin(ModelAdmin):
+    def has_add_permission(self, request): return False
+    def has_delete_permission(self, request, obj=None): return False
+    
+    def changelist_view(self, request, extra_context=None):
+        from .services import VPNService
+        
+        # Consistent log fetching for all services
+        log_contents = {
+            'openvpn': VPNService.get_service_logs('openvpn', lines=100),
+            'panel_err': VPNService.get_service_logs('panel', lines=100),
+            'worker_err': VPNService.get_service_logs('worker', lines=100),
+            'beat_err': VPNService.get_service_logs('beat', lines=100),
+        }
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Nhật ký Hệ thống (Real-time Errors)',
+            'log_contents': log_contents,
+        }
+        return TemplateResponse(request, "admin/system_logs.html", context)

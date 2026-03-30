@@ -1,21 +1,29 @@
-{% load static %}
+{% load static i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPN Locked - OpenVPN Manager</title>
+    <title>{% trans 'VPN Locked' %} - {{ site_name }}</title>
     <script src="{% static 'vendor/tailwind/tailwind.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
-    <link rel="stylesheet" href="{% static 'vendor/font-noto-sans-vi/font.css' %}">
     <style>
-        body { font-family: 'Noto Sans VN', 'Outfit', sans-serif; background: #020617; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #020617;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .glass {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+
         .gradient-blob {
             position: absolute;
             width: 50vw;
@@ -24,17 +32,10 @@
             z-index: -1;
             filter: blur(80px);
         }
-        /* Fix scrolling */
-        html, body { 
-            height: auto !important; 
-            min-height: 100vh !important;
-            overflow-y: auto !important; 
-            -webkit-overflow-scrolling: touch;
-        }
     </style>
 </head>
+
 <body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-    {% load i18n %}
     <!-- Background Decoration -->
     <div class="gradient-blob -top-24 -left-24"></div>
     <div class="gradient-blob -bottom-24 -right-24" style="background: radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, transparent 70%);"></div>
@@ -43,43 +44,20 @@
     <div class="absolute top-6 right-6 z-50">
         <div class="relative group">
             <button class="glass px-4 py-2 rounded-xl text-xs font-bold text-gray-400 flex items-center gap-2 border border-white/5">
-                <i class="fas fa-globe text-blue-500"></i>
+                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
                 {% get_current_language as CURRENT_LANG %}{{ CURRENT_LANG|upper }}
             </button>
             <div class="absolute right-0 mt-2 w-32 bg-gray-900 border border-gray-800 rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                 {% get_available_languages as LANGUAGES %}
                 {% for lang in LANGUAGES %}
-                    <form action="{% url 'set_language' %}" method="post">
-                        {% csrf_token %}
-                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
-                        <input name="language" type="hidden" value="{{ lang.0 }}">
-                        <button type="submit" class="w-full text-left px-4 py-2 text-[10px] hover:bg-white/5 {% if lang.0 == CURRENT_LANG %}text-blue-500{% else %}text-gray-400{% endif %}">
-                            {{ lang.1 }}
-                        </button>
-                    </form>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Language Switcher -->
-    <div class="absolute top-6 right-6 z-50">
-        <div class="relative group">
-            <button class="glass px-4 py-2 rounded-xl text-xs font-bold text-gray-400 flex items-center gap-2 border border-white/5">
-                <i class="fas fa-globe text-blue-500"></i>
-                {% get_current_language as CURRENT_LANG %}{{ CURRENT_LANG|upper }}
-            </button>
-            <div class="absolute right-0 mt-2 w-32 bg-gray-900 border border-gray-800 rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                {% get_available_languages as LANGUAGES %}
-                {% for lang in LANGUAGES %}
-                    <form action="{% url 'set_language' %}" method="post">
-                        {% csrf_token %}
-                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
-                        <input name="language" type="hidden" value="{{ lang.0 }}">
-                        <button type="submit" class="w-full text-left px-4 py-2 text-[10px] hover:bg-white/5 {% if lang.0 == CURRENT_LANG %}text-blue-500{% else %}text-gray-400{% endif %}">
-                            {{ lang.1 }}
-                        </button>
-                    </form>
+                <form action="{% url 'set_language' %}" method="post">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                    <input name="language" type="hidden" value="{{ lang.0 }}">
+                    <button type="submit" class="w-full text-left px-4 py-2 text-[10px] hover:bg-white/5 {% if lang.0 == CURRENT_LANG %}text-blue-500{% else %}text-gray-400{% endif %}">
+                        {{ lang.1 }}
+                    </button>
+                </form>
                 {% endfor %}
             </div>
         </div>
@@ -88,28 +66,31 @@
     <div class="glass max-w-lg w-full rounded-[2.5rem] p-8 md:p-12 text-center animate-in fade-in zoom-in duration-700">
         <!-- Logo -->
         <div class="flex flex-col items-center mb-10">
-            <div class="w-24 h-24 mb-6 relative">
-                <div class="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-                <img src="{% static 'images/logo.png' %}" alt="Logo" class="w-full h-full object-contain relative z-10">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white/5 border border-white/10 mb-6 p-5 relative">
+                <img src="{{ logo }}" alt="Logo" class="w-full h-full object-contain">
+                <span class="absolute -top-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </span>
             </div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tight uppercase italic">OPENVPN<span class="text-blue-500"> MANAGER</span></h1>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight uppercase italic">{{ site_name|default:"VPN Portal" }}</h1>
         </div>
 
         <!-- Locked Message -->
         <div class="space-y-4 mb-10">
             <div class="inline-flex items-center gap-2 bg-red-500/10 text-red-500 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-red-500/20">
-                <i class="fas fa-lock text-[10px]"></i> Connection Suspended
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                {% trans 'Connection Suspended' %}
             </div>
-            <h2 class="text-2xl font-bold text-white">Tài khoản đã bị tạm khóa</h2>
-            <p class="text-gray-400 text-lg">Gói cước của bạn đã hết hạn hoặc bị tạm khóa. Vui lòng thanh toán để mở lại quyền truy cập Internet.</p>
+            <h2 class="text-2xl font-bold text-white">{% trans 'Tài khoản đã bị tạm khóa' %}</h2>
+            <p class="text-gray-400 text-lg">{% trans 'Gói cước của bạn đã hết hạn hoặc bị tạm khóa. Vui lòng thanh toán để mở lại quyền truy cập Internet.' %}</p>
         </div>
 
         <!-- Payment Info -->
         <div class="bg-gray-950/50 rounded-3xl p-6 border border-gray-800/50 mb-8">
-            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Quét mã QR để thanh toán nhanh</p>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">{% trans 'Quét mã QR để thanh toán nhanh' %}</p>
             <div class="bg-white p-4 rounded-2xl inline-block shadow-2xl relative group">
                 <div class="absolute inset-0 bg-blue-500 rounded-2xl blur opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                <img src="{{ qr_code }}" alt="QR Code" class="w-48 h-48 relative z-10">
+                <img src="{{ qr_code }}" alt="QR Code" class="w-64 h-auto relative z-10">
             </div>
         </div>
 
@@ -117,17 +98,17 @@
         <div class="grid grid-cols-1 gap-4">
             {% if group_link %}
             <a href="{{ group_link }}" target="_blank" class="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl transition-all shadow-lg shadow-blue-500/30">
-                <i class="fab fa-telegram-plane"></i>
-                Hỗ trợ qua Telegram
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.91-1.27 4.85-2.11 5.82-2.51 2.77-1.15 3.35-1.35 3.72-1.35.08 0 .26.02.38.12.1.08.13.19.14.28.01.08.01.2 0 .33z"/></svg>
+                {% trans 'Nhóm Hỗ Trợ' %}
             </a>
             {% endif %}
             <button onclick="window.location.reload()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-4 px-8 rounded-2xl transition-all border border-gray-700">
-                Thử kết nối lại
+                {% trans 'Thử kết nối lại' %}
             </button>
         </div>
 
         <p class="mt-8 text-gray-600 text-xs font-medium uppercase tracking-widest">
-            © 2026 OpenVPN Manager | ShieldCall VN
+            © {% now "Y" %} {{ footer_text|default:site_name }}
         </p>
     </div>
 </body>

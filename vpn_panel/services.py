@@ -524,17 +524,21 @@ class VPNService:
 
     @classmethod
     def get_service_logs(cls, service: str = 'openvpn', lines: int = 100) -> str:
-        """Fetches latest logs for various services."""
+        """Fetches latest logs for various services, prioritizing error logs as requested."""
         if service == 'openvpn':
             full_service_name = cls.get_vpn_setting('SERVICE_NAME', 'openvpn-server@server')
+            # For OpenVPN, we use journalctl. Adding -p err would be too restrictive, 
+            # but we can prioritize seeing the latest events.
             success, output = cls.run_command(["sudo", "journalctl", "-u", full_service_name, "--no-pager", "-n", str(lines)])
         elif service in ['panel', 'worker', 'beat']:
-             log_file = f"/var/log/vpn_{service}.out.log"
-             # Also try err log if out log is empty or small
+             log_file = f"/var/log/vpn_{service}.err.log"
+             # Prioritize .err.log
              success, output = cls.run_command(["sudo", "tail", "-n", str(lines), log_file])
+             
+             # Fallback to .out.log if .err.log is suspiciously empty
              if not output or len(output.strip()) < 5:
-                 success_err, output_err = cls.run_command(["sudo", "tail", "-n", str(lines), f"/var/log/vpn_{service}.err.log"])
-                 if success_err: output = output_err
+                 success_out, output_out = cls.run_command(["sudo", "tail", "-n", str(lines), f"/var/log/vpn_{service}.out.log"])
+                 if success_out: output = output_out
         else:
             return f"Unknown service: {service}"
             

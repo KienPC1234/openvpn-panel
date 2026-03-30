@@ -1,0 +1,82 @@
+{% extends 'unfold/layouts/base_simple.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="px-4 py-8 md:px-8 max-w-6xl mx-auto">
+    <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+                <span class="material-symbols-outlined text-red-500 !text-4xl">bug_report</span>
+                Nhật ký Hệ thống (Logs)
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-2 font-medium">Theo dõi hoạt động của Gunicorn, Celery Worker và Celery Beat trực tiếp từ server.</p>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <a href="." class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-2xl font-bold text-xs transition-all flex items-center gap-2 uppercase tracking-widest">
+                <span class="material-symbols-outlined text-sm">refresh</span> Tải lại Log
+            </a>
+        </div>
+    </div>
+
+    <!-- Multi-tab Log View -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-sm shadow-red-500/5">
+        <div class="border-b border-gray-100 dark:border-gray-800 px-6">
+            <nav class="flex gap-8" aria-label="Tabs">
+                <button onclick="switchTab('openvpn')" id="tab-openvpn" class="log-tab py-6 border-b-2 border-transparent font-black uppercase text-[10px] tracking-widest text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all active-tab">OpenVPN</button>
+                <button onclick="switchTab('panel_err')" id="tab-panel_err" class="log-tab py-6 border-b-2 border-transparent font-black uppercase text-[10px] tracking-widest text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all">Panel Error</button>
+                <button onclick="switchTab('worker_err')" id="tab-worker_err" class="log-tab py-6 border-b-2 border-transparent font-black uppercase text-[10px] tracking-widest text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all">Worker Error</button>
+                <button onclick="switchTab('beat_err')" id="tab-beat_err" class="log-tab py-6 border-b-2 border-transparent font-black uppercase text-[10px] tracking-widest text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all">Beat Error</button>
+            </nav>
+        </div>
+
+        <div class="p-4 bg-gray-950 min-h-[500px] relative font-mono text-[13px] leading-relaxed">
+            <div id="content-openvpn" class="log-content hidden block">
+                <pre class="text-indigo-400 whitespace-pre-wrap">{{ log_contents.openvpn }}</pre>
+            </div>
+            <div id="content-panel_err" class="log-content hidden">
+                <pre class="text-blue-400 whitespace-pre-wrap">{{ log_contents.panel_err }}</pre>
+            </div>
+            <div id="content-worker_err" class="log-content hidden">
+                <pre class="text-red-400 whitespace-pre-wrap">{{ log_contents.worker_err }}</pre>
+            </div>
+            <div id="content-beat_err" class="log-content hidden">
+                <pre class="text-orange-400 whitespace-pre-wrap">{{ log_contents.beat_err }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .active-tab {
+        border-color: #ef4444 !important; /* red-500 */
+        color: #ef4444 !important;
+    }
+    .log-content pre {
+        max-height: 700px;
+        overflow-y: auto;
+    }
+</style>
+
+<script>
+    function switchTab(id) {
+        // Hide all
+        document.querySelectorAll('.log-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.log-tab').forEach(el => el.classList.remove('active-tab'));
+        
+        // Show target
+        document.getElementById('content-' + id).classList.remove('hidden');
+        document.getElementById('tab-' + id).classList.add('active-tab');
+
+        // Scroll pre to bottom
+        const pre = document.querySelector('#content-' + id + ' pre');
+        if (pre) pre.scrollTop = pre.scrollHeight;
+    }
+    
+    // Auto-scroll the first visible pre on load
+    window.onload = () => {
+        const activeContent = document.querySelector('.log-content:not(.hidden) pre');
+        if (activeContent) activeContent.scrollTop = activeContent.scrollHeight;
+    };
+</script>
+{% endblock %}

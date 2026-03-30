@@ -209,6 +209,32 @@ class Announcement(models.Model):
     def __str__(self):
         return self.subject
         
+class TaskLog(models.Model):
+    task_name = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, choices=[('SUCCESS', 'Thành công'), ('FAILURE', 'Thất bại'), ('RUNNING', 'Đang chạy')], default='RUNNING')
+    result = models.TextField(blank=True)
+    error = models.TextField(blank=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
-        verbose_name = "Thông báo Email"
-        verbose_name_plural = "Thông báo Email"
+        ordering = ['-started_at']
+        verbose_name = "Lịch sử Tác vụ"
+        verbose_name_plural = "Lịch sử Tác vụ (Debug)"
+
+    def duration(self):
+        if self.finished_at and self.started_at:
+            return (self.finished_at - self.started_at).total_seconds()
+        return "---"
+
+class TaskControl(TaskLog):
+    class Meta:
+        proxy = True
+        verbose_name = "Điều khiển Tác vụ"
+        verbose_name_plural = "Điều khiển Tác vụ (Debug)"
+
+class SystemLog(TaskLog):
+    class Meta:
+        proxy = True
+        verbose_name = "Nhật ký Hệ thống"
+        verbose_name_plural = "Nhật ký Hệ thống (Logs)"

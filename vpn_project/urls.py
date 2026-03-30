@@ -13,7 +13,6 @@ urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
     path('', include('vpn_panel.urls')),
     path('webpush/', include('webpush.urls')),
-    path("__reload__/", include("django_browser_reload.urls")),
     path('admin/vpn_panel/logs/', views.AdminServiceLogView.as_view(), name='admin_vpn_logs'),
     path('admin/vpn_panel/logs/content/', views.AdminServiceLogContent.as_view(), name='admin_vpn_logs_content'),
     path('admin/', admin.site.urls),

@@ -1,78 +1,86 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Tải xuống Installer - OpenVPN Manager{% endblock %}
+{% block title %}{% trans 'Tải xuống App' %} - {{ site_name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-12">
-    <div class="text-center mb-16">
-        <h1 class="text-4xl font-extrabold text-white mb-4 tracking-tight">Cài đặt <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-600">OpenVPN Connect</span></h1>
-        <p class="text-gray-400 max-w-xl mx-auto">Chọn phiên bản phù hợp với hệ điều hành của bạn để bắt đầu kết nối bảo mật.</p>
+<div class="max-w-5xl mx-auto py-12">
+    <!-- Header -->
+    <div class="text-center mb-16 space-y-4">
+        <h1 class="text-4xl font-bold text-white tracking-tight">{% trans 'Tải Bộ Cài Đặt' %}</h1>
+        <p class="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed">
+            {% trans 'Chọn phiên bản phù hợp cho thiết bị của bạn. Chúng tôi khuyến nghị sử dụng phiên bản chính thức để đảm bảo độ ổn định và bảo mật cao nhất.' %}
+        </p>
     </div>
 
+    <!-- Installer Grid -->
     <div class="grid md:grid-cols-2 gap-8">
         {% for installer in installers %}
-        <div class="glass-panel group relative overflow-hidden rounded-3xl p-8 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 shadow-2xl">
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl group-hover:bg-blue-600/10 transition-all"></div>
-            
+        <div class="clean-card p-8 group relative overflow-hidden flex flex-col justify-between">
             <div class="relative z-10">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center border border-blue-500/20 shadow-inner">
-                        <i class="fab {{ installer.icon }} text-2xl text-blue-400"></i>
+                <div class="flex items-center gap-5 mb-8">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+                        <i class="fab {{ installer.icon }} text-3xl text-blue-400 group-hover:text-white transition-colors"></i>
                     </div>
                     <div>
                         <h3 class="text-xl font-bold text-white">{{ installer.label }}</h3>
-                        <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">{{ installer.size }}</p>
+                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">{{ installer.size }} • Version Latest</p>
                     </div>
                 </div>
 
-                <p class="text-gray-400 text-sm mb-8 leading-relaxed">
-                    Phiên bản mới nhất của OpenVPN Client được khuyến nghị cho bảo mật và hiệu năng tối ưu.
+                <p class="text-sm text-slate-400 leading-relaxed mb-10">
+                    {% trans 'Ứng dụng kết nối tối ưu cho hệ điều hành' %} {{ installer.label }}. {% trans 'Hỗ trợ đầy đủ các tính năng bảo mật và tăng tốc độ truy cập.' %}
                 </p>
 
-                <a href="{{ installer.url }}" class="flex items-center justify-between w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-2xl transform active:scale-95 transition-all shadow-lg shadow-blue-600/20 group/btn">
-                    <span>DOWNLOAD NOW</span>
-                    <i class="fas fa-arrow-down group-hover/btn:translate-y-1 transition-transform"></i>
+                <a href="{{ installer.url }}" class="flex items-center justify-center gap-3 w-full bg-white text-slate-900 hover:bg-slate-100 font-bold py-4 rounded-xl transition-all shadow-xl shadow-white/5 active:scale-95">
+                    <i class="fas fa-download text-sm"></i>
+                    {% trans 'TẢI NGAY' %}
                 </a>
             </div>
+            
+            <!-- Background accent -->
+            <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-blue-500/[0.03] rounded-full blur-3xl pointer-events-none group-hover:bg-blue-500/[0.07] transition-all duration-700"></div>
         </div>
         {% empty %}
-        <div class="col-span-full py-20 text-center glass-panel rounded-3xl border border-dashed border-gray-800">
-            <i class="fas fa-folder-open text-gray-700 text-5xl mb-4"></i>
-            <p class="text-gray-500 font-medium">Hiện tại không có bản cài đặt nào khả dụng. Vui lòng liên hệ Admin.</p>
+        <div class="col-span-full py-20 text-center clean-card border-dashed">
+            <i class="fas fa-box-open text-slate-700 text-5xl mb-6"></i>
+            <p class="text-slate-500 font-medium italic">{% trans 'Hiện tại không có bản cài đặt nào khả dụng. Vui lòng quay lại sau.' %}</p>
         </div>
         {% endfor %}
     </div>
 
-    <div class="mt-20 glass-panel rounded-3xl p-10 border border-gray-800 bg-gradient-to-b from-gray-900/50 to-transparent">
-        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-            <i class="fas fa-info-circle text-blue-400"></i>
-            Hướng dẫn cài đặt
+    <!-- Interactive Guides -->
+    <div class="mt-20 clean-card p-10 bg-slate-900/40">
+        <h2 class="text-2xl font-bold text-white mb-10 flex items-center gap-3">
+            <i class="fas fa-book-open text-blue-500"></i>
+            {% trans '3 Bước Để Bắt Đầu' %}
         </h2>
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="space-y-3">
-                <div class="text-3xl font-black text-gray-800">01</div>
-                <h4 class="font-bold text-white">Tải & Cài đặt</h4>
-                <p class="text-xs text-gray-500">Tải bộ cài ở trên và làm theo hướng dẫn cài đặt của hệ thống.</p>
+        
+        <div class="grid md:grid-cols-3 gap-12">
+            <div class="space-y-4 relative">
+                <div class="text-5xl font-black text-white/5 absolute -top-6 -left-2">01</div>
+                <div class="relative z-10">
+                    <h4 class="font-bold text-white mb-2 underline underline-offset-8 decoration-blue-500/50">{% trans 'Cài đặt App' %}</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">{% trans 'Tải phiên bản phù hợp từ danh sách trên và tiến hành cài đặt vào thiết bị của bạn.' %}</p>
+                </div>
             </div>
-            <div class="space-y-3">
-                <div class="text-3xl font-black text-gray-800">02</div>
-                <h4 class="font-bold text-white">Nhập Profile</h4>
-                <p class="text-xs text-gray-500">Sử dụng mã OTP để tải file (.ovpn) và nhập (Import) vào ứng dụng.</p>
+            
+            <div class="space-y-4 relative">
+                <div class="text-5xl font-black text-white/5 absolute -top-6 -left-2">02</div>
+                <div class="relative z-10">
+                    <h4 class="font-bold text-white mb-2 underline underline-offset-8 decoration-blue-500/50">{% trans 'Cấu hình Profile' %}</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">{% trans 'Vào Dashboard hoặc nhập mã OTP trên trang chủ để nhận file cấu hình .ovpn cá nhân.' %}</p>
+                </div>
             </div>
-            <div class="space-y-3">
-                <div class="text-3xl font-black text-gray-800">03</div>
-                <h4 class="font-bold text-white">Kết nối</h4>
-                <p class="text-xs text-gray-500">Bật ứng dụng và nhấn phím kết nối để tận hưởng mạng an toàn.</p>
+            
+            <div class="space-y-4 relative">
+                <div class="text-5xl font-black text-white/5 absolute -top-6 -left-2">03</div>
+                <div class="relative z-10">
+                    <h4 class="font-bold text-white mb-2 underline underline-offset-8 decoration-blue-500/50">{% trans 'Kết nối an toàn' %}</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">{% trans 'Mở File .ovpn bằng App đã cài đặt, nhấn Connect để bắt đầu sử dụng VPN.' %}</p>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .glass-panel {
-        background: rgba(17, 24, 39, 0.4);
-        backdrop-filter: blur(12px);
-    }
-</style>
 {% endblock %}

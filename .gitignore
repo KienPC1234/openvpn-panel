@@ -222,3 +222,6 @@ pids
 staticfiles
 formula
 settings.py
+*.code-workspace
+*.sqlite3-shm
+*.sqlite3-wal

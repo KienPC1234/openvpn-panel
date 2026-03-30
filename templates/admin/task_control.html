@@ -1,0 +1,242 @@
+{% extends 'unfold/layouts/base_simple.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="px-6 py-10 md:px-12 max-w-7xl mx-auto">
+    <!-- Header Section -->
+    <div class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-gray-100/10 pb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="p-2.5 bg-primary-600/10 rounded-xl">
+                    <span class="material-symbols-outlined text-primary-600 !text-3xl leading-none">terminal</span>
+                </div>
+                <h1 class="text-3xl font-black tracking-tight">
+                    Điều khiển Hệ thống
+                </h1>
+            </div>
+            <p class="font-medium max-w-2xl opacity-60">
+                Trung tâm quản trị các tác vụ thực thi định kỳ và bảo trì cơ sở hạ tầng VPN. Theo dõi thời gian thực và xử lý sự cố nhanh chóng.
+            </p>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="flex flex-col items-end">
+                <span class="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">Trạng thái Core</span>
+                <div class="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-2xl shadow-sm">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-widest">Hệ thống Online</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Title: Quick Actions -->
+    <div class="flex items-center gap-2 mb-6">
+        <span class="material-symbols-outlined opacity-40 text-lg">bolt</span>
+        <h2 class="text-sm font-bold uppercase tracking-[0.2em] opacity-50">Tác vụ nhanh</h2>
+    </div>
+
+    <!-- Quick Actions Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <!-- Card: Sync Status -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20">
+                    <span class="material-symbols-outlined">sync</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Đồng bộ Trạng thái</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Cập nhật trạng thái kết nối, thời hạn và chu trình thanh toán của người dùng.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="sync_user_statuses">
+                <button type="submit" class="w-full py-3 bg-primary-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-primary-700 active:scale-[0.98] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">play_arrow</span> Thực thi Ngay
+                </button>
+            </form>
+        </div>
+
+        <!-- Card: Traffic Stats -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20">
+                    <span class="material-symbols-outlined">bar_chart</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Thống kê Lưu lượng</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Thu thập dữ liệu In/Out từ các interface mạng để báo cáo chi tiết sử dụng.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="collect_traffic_stats">
+                <button type="submit" class="w-full py-3 bg-primary-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-primary-700 active:scale-[0.98] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">play_arrow</span> Thực thi Ngay
+                </button>
+            </form>
+        </div>
+
+        <!-- Card: Expiry Warnings -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20">
+                    <span class="material-symbols-outlined">notification_important</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Cảnh báo Hết hạn</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Tự động gửi email thông báo cho các khách hàng sắp đến ngày gia hạn.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="send_expiry_warnings">
+                <button type="submit" class="w-full py-3 bg-primary-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-primary-700 active:scale-[0.98] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">play_arrow</span> Thực thi Ngay
+                </button>
+            </form>
+        </div>
+
+        <!-- Card: Sync VPN Users -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-500/20">
+                    <span class="material-symbols-outlined">group_add</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Sync Database VPN</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Đồng bộ danh sách người dùng giữa mã nguồn Panel và hệ thống OpenVPN.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="sync_system_users">
+                <button type="submit" class="w-full py-3 bg-primary-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-primary-700 active:scale-[0.98] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">play_arrow</span> Thực thi Ngay
+                </button>
+            </form>
+        </div>
+
+        <!-- Card: Rebuild OVPN -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20">
+                    <span class="material-symbols-outlined">build</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Cấp lại Toàn bộ OVPN</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Tạo lại tất cả các file cấu hình client (.ovpn) theo template mới nhất.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="rebuild_all_ovpn">
+                <button type="submit" class="w-full py-3 bg-primary-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-primary-700 active:scale-[0.98] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">play_arrow</span> Thực thi Ngay
+                </button>
+            </form>
+        </div>
+
+        <!-- Card: Cleanup -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20">
+                    <span class="material-symbols-outlined">delete_sweep</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Dọn dẹp Hệ thống</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Loại bỏ các bản ghi cũ, file tạm và tối ưu hóa cơ sở dữ liệu sau chu kỳ.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="cleanup_data">
+                <button type="submit" class="w-full py-3 bg-primary-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-primary-700 active:scale-[0.98] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">play_arrow</span> Thực thi Ngay
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logs Section Title -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined opacity-40 text-lg">history</span>
+            <h2 class="text-sm font-bold uppercase tracking-[0.2em] opacity-50">Lịch sử Thực thi gần đây</h2>
+        </div>
+        <a href="." class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100/10 rounded-lg text-xs font-bold text-primary-600 hover:bg-primary-600/10 transition-all no-underline">
+            <span class="material-symbols-outlined text-sm">refresh</span> Tải lại
+        </a>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="border border-gray-100/10 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto min-h-[400px]">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100/5">
+                        <th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px] opacity-40 border-b border-gray-100/5">Tác vụ</th>
+                        <th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px] opacity-40 border-b border-gray-100/5 text-center">Trạng thái</th>
+                        <th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px] opacity-40 border-b border-gray-100/5">Thời gian Bắt đầu</th>
+                        <th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px] opacity-40 border-b border-gray-100/5">Kết quả / Chi tiết</th>
+                        <th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px] opacity-40 border-b border-gray-100/5 text-right">Khối lượng</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100/5">
+                    {% for log in logs %}
+                    <tr class="hover:bg-gray-100/5 transition-colors">
+                        <td class="px-8 py-4 font-bold text-sm">
+                            {{ log.task_name }}
+                        </td>
+                        <td class="px-8 py-4 text-center">
+                            {% if log.status == 'SUCCESS' %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-[10px] font-black tracking-tight">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                SUCCESS
+                            </span>
+                            {% elif log.status == 'FAILURE' %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 text-[10px] font-black tracking-tight">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                FAILURE
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 text-primary-600 dark:text-primary-400 text-[10px] font-black tracking-tight animate-pulse">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary-500"></span>
+                                RUNNING
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-8 py-4 text-xs font-medium opacity-60">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                                {{ log.started_at|date:"d/m/Y - H:i:s" }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-4">
+                            <div class="max-w-[300px] truncate opacity-60 text-xs italic leading-relaxed">
+                                {{ log.result|default:log.error|default:"---" }}
+                            </div>
+                        </td>
+                        <td class="px-8 py-4 text-right">
+                            <span class="font-mono text-[11px] px-2 py-0.5 bg-gray-100/10 rounded font-bold">
+                                {{ log.duration }}s
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <div class="flex flex-col items-center gap-3 opacity-20">
+                                <span class="material-symbols-outlined !text-6xl">inventory_2</span>
+                                <p class="text-sm font-medium">Chưa có dữ liệu nhật ký tác vụ nào được ghi lại.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Đăng ký | VPN Manager{% endblock %}
+{% load i18n %}
+{% block title %}{% trans 'Đăng ký' %} | {{ site_name }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex">
@@ -11,34 +12,34 @@
             <div class="absolute inset-0 opacity-[0.025]" style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:48px 48px;"></div>
         </div>
         <div class="relative z-10">
-            <div class="text-indigo-400 text-xs font-black uppercase tracking-[0.3em] mb-4">Tham gia ngay hôm nay</div>
+            <div class="text-indigo-400 text-xs font-black uppercase tracking-[0.3em] mb-4">{% trans 'Tham gia ngay hôm nay' %}</div>
             <h2 class="text-5xl font-black text-white leading-tight tracking-tight mb-6">
-                Bảo vệ<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">quyền riêng tư</span><br>
-                của bạn.
+                {% trans 'Bảo vệ' %}<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{% trans 'quyền riêng tư' %}</span><br>
+                {% trans 'của bạn.' %}
             </h2>
-            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">Tạo tài khoản và trải nghiệm VPN cao cấp với 3 ngày dùng thử miễn phí hoàn toàn.</p>
+            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">{% trans 'Tạo tài khoản và trải nghiệm VPN cao cấp với 3 ngày dùng thử miễn phí hoàn toàn.' %}</p>
 
             <div class="flex flex-col gap-4">
                 <div class="flex items-start gap-4">
                     <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400 font-black text-sm">1</div>
                     <div>
-                        <div class="text-white text-sm font-bold">Điền thông tin và email</div>
-                        <div class="text-gray-600 text-xs mt-0.5">Email dùng để nhận mã xác thực</div>
+                        <div class="text-white text-sm font-bold">{% trans 'Điền thông tin và email' %}</div>
+                        <div class="text-gray-600 text-xs mt-0.5">{% trans 'Email dùng để nhận mã xác thực' %}</div>
                     </div>
                 </div>
                 <div class="flex items-start gap-4">
                     <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400 font-black text-sm">2</div>
                     <div>
-                        <div class="text-white text-sm font-bold">Xác thực mã OTP qua email</div>
-                        <div class="text-gray-600 text-xs mt-0.5">Mã có hiệu lực trong 10 phút</div>
+                        <div class="text-white text-sm font-bold">{% trans 'Xác thực mã OTP qua email' %}</div>
+                        <div class="text-gray-600 text-xs mt-0.5">{% trans 'Mã có hiệu lực trong 10 phút' %}</div>
                     </div>
                 </div>
                 <div class="flex items-start gap-4">
                     <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400 font-black text-sm">3</div>
                     <div>
-                        <div class="text-white text-sm font-bold">Nhận 3 ngày DEMO miễn phí</div>
-                        <div class="text-gray-600 text-xs mt-0.5">Trải nghiệm VPN cao cấp ngay lập tức</div>
+                        <div class="text-white text-sm font-bold">{% trans 'Nhận 3 ngày DEMO miễn phí' %}</div>
+                        <div class="text-gray-600 text-xs mt-0.5">{% trans 'Trải nghiệm VPN cao cấp ngay lập tức' %}</div>
                     </div>
                 </div>
             </div>
@@ -50,11 +51,11 @@
         <div class="w-full max-w-md py-8">
 
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 mb-3">
-                    <i class="fas fa-user-plus text-3xl text-indigo-400"></i>
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/5 border border-white/10 mb-3 p-4">
+                    <img src="{{ site_logo_base64|default:site_logo }}" alt="Logo" class="w-full h-full object-contain">
                 </div>
-                <h1 class="text-3xl font-black tracking-tight text-white">TẠO <span class="text-indigo-400">TÀI KHOẢN</span></h1>
-                <p class="text-gray-500 mt-1 text-sm">Đăng ký miễn phí · Nhận ngay <span class="text-indigo-400 font-bold">3 ngày DEMO</span></p>
+                <h1 class="text-3xl font-black tracking-tight text-white uppercase italic">{{ site_name }}</h1>
+                <p class="text-gray-500 mt-1 text-sm">{% trans 'Đăng ký miễn phí · Nhận ngay' %} <span class="text-indigo-400 font-bold">{% trans '3 ngày DEMO' %}</span></p>
             </div>
 
             <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
@@ -69,18 +70,18 @@
                     {% csrf_token %}
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Tên đăng nhập <span class="text-red-400">*</span></label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{% trans 'Tên đăng nhập' %} <span class="text-red-400">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-user text-sm"></i></span>
                             <input type="text" name="username" required autofocus value="{{ form.username.value|default:'' }}"
                                 class="w-full bg-gray-950 border {% if form.username.errors %}border-red-500/60{% else %}border-gray-800{% endif %} rounded-xl py-3 pl-11 pr-4 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
-                                placeholder="Chỉ chữ cái, số, dấu gạch dưới">
+                                placeholder="{% trans 'Chỉ chữ cái, số, dấu gạch dưới' %}">
                         </div>
                         {% if form.username.errors %}<p class="text-red-400 text-xs mt-1">{{ form.username.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Họ và Tên</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{% trans 'Họ và Tên' %}</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-id-card text-sm"></i></span>
                             <input type="text" name="full_name" value="{{ form.full_name.value|default:'' }}"
@@ -98,16 +99,16 @@
                                 placeholder="email@example.com">
                         </div>
                         {% if form.email.errors %}<p class="text-red-400 text-xs mt-1">{{ form.email.errors.0 }}</p>
-                        {% else %}<p class="text-gray-700 text-[10px] mt-1"><i class="fas fa-info-circle mr-1"></i>Mã OTP xác thực sẽ được gửi về đây</p>{% endif %}
+                        {% else %}<p class="text-gray-700 text-[10px] mt-1"><i class="fas fa-info-circle mr-1"></i>{% trans 'Mã OTP xác thực sẽ được gửi về đây' %}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Mật khẩu <span class="text-red-400">*</span></label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{% trans 'Mật khẩu' %} <span class="text-red-400">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-lock text-sm"></i></span>
                             <input type="password" name="password" required id="reg-pw"
                                 class="w-full bg-gray-950 border {% if form.password.errors %}border-red-500/60{% else %}border-gray-800{% endif %} rounded-xl py-3 pl-11 pr-12 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
-                                placeholder="Tối thiểu 6 ký tự">
+                                placeholder="{% trans 'Tối thiểu 6 ký tự' %}">
                             <button type="button" onclick="togglePw('reg-pw','reg-pw-icon')" class="absolute inset-y-0 right-4 flex items-center text-gray-600 hover:text-gray-400">
                                 <i class="fas fa-eye text-sm" id="reg-pw-icon"></i>
                             </button>
@@ -116,12 +117,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Xác nhận mật khẩu <span class="text-red-400">*</span></label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{% trans 'Xác nhận mật khẩu' %} <span class="text-red-400">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-lock text-sm"></i></span>
                             <input type="password" name="confirm_password" required id="reg-confirm"
                                 class="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 pl-11 pr-12 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
-                                placeholder="Nhập lại mật khẩu">
+                                placeholder="{% trans 'Nhập lại mật khẩu' %}">
                             <button type="button" onclick="togglePw('reg-confirm','reg-confirm-icon')" class="absolute inset-y-0 right-4 flex items-center text-gray-600 hover:text-gray-400">
                                 <i class="fas fa-eye text-sm" id="reg-confirm-icon"></i>
                             </button>
@@ -134,22 +135,22 @@
                             <i class="fas fa-gift text-indigo-400 text-sm"></i>
                         </div>
                         <div>
-                            <div class="text-indigo-300 text-xs font-bold">Ưu đãi chào mừng</div>
-                            <div class="text-gray-600 text-[11px]">Xác thực email → nhận ngay <b class="text-indigo-400">3 ngày dùng thử MIỄN PHÍ</b></div>
+                            <div class="text-indigo-300 text-xs font-bold">{% trans 'Ưu đãi chào mừng' %}</div>
+                            <div class="text-gray-600 text-[11px]">{% trans 'Xác thực email → nhận ngay' %} <b class="text-indigo-400">{% trans '3 ngày dùng thử MIỄN PHÍ' %}</b></div>
                         </div>
                     </div>
 
                     <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all duration-200 flex items-center justify-center gap-2 group">
                         <i class="fas fa-paper-plane text-xs"></i>
-                        <span>TẠO TÀI KHOẢN</span>
+                        <span>{% trans 'TẠO TÀI KHOẢN' %}</span>
                         <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
                     </button>
                 </form>
             </div>
 
             <p class="text-center text-gray-600 text-sm mt-6">
-                Đã có tài khoản?
-                <a href="{% url 'login' %}" class="text-indigo-400 hover:text-indigo-300 font-bold ml-1 transition-colors">Đăng nhập →</a>
+                {% trans 'Đã có tài khoản?' %}
+                <a href="{% url 'login' %}" class="text-indigo-400 hover:text-indigo-300 font-bold ml-1 transition-colors">{% trans 'Đăng nhập' %} →</a>
             </p>
         </div>
     </div>

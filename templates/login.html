@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Đăng nhập | VPN Manager{% endblock %}
+{% load i18n %}
+{% block title %}{% trans 'Đăng nhập' %} | {{ site_name }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex">
@@ -11,25 +12,25 @@
             <div class="absolute inset-0 opacity-[0.025]" style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:48px 48px;"></div>
         </div>
         <div class="relative z-10">
-            <div class="text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">Bảo mật cao cấp</div>
+            <div class="text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">{% trans 'Bảo mật cao cấp' %}</div>
             <h2 class="text-5xl font-black text-white leading-tight tracking-tight mb-6">
-                Kết nối<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">an toàn</span><br>
-                mọi nơi.
+                {% trans 'Kết nối' %}<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{% trans 'an toàn' %}</span><br>
+                {% trans 'mọi nơi.' %}
             </h2>
-            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">Bảo vệ kết nối Internet của bạn với hệ thống VPN doanh nghiệp. Tốc độ cao, ổn định, bảo mật tối đa.</p>
+            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">{% trans 'Bảo vệ kết nối Internet của bạn với hệ thống VPN doanh nghiệp. Tốc độ cao, ổn định, bảo mật tối đa.' %}</p>
             <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-3 text-sm text-gray-400">
                     <span class="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0"><i class="fas fa-check text-[8px] text-blue-400"></i></span>
-                    Mã hóa AES-256 chuẩn quân sự
+                    {% trans 'Mã hóa AES-256 chuẩn quân sự' %}
                 </div>
                 <div class="flex items-center gap-3 text-sm text-gray-400">
                     <span class="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0"><i class="fas fa-check text-[8px] text-blue-400"></i></span>
-                    Uptime 99.9% - Ổn định tuyệt đối
+                    {% trans 'Uptime 99.9% - Ổn định tuyệt đối' %}
                 </div>
                 <div class="flex items-center gap-3 text-sm text-gray-400">
                     <span class="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0"><i class="fas fa-check text-[8px] text-blue-400"></i></span>
-                    Hỗ trợ kỹ thuật 24/7
+                    {% trans 'Hỗ trợ kỹ thuật 24/7' %}
                 </div>
             </div>
         </div>
@@ -41,32 +42,32 @@
 
             <!-- Logo -->
             <div class="text-center mb-10">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-600/10 border border-blue-500/20 mb-4 shadow-xl shadow-blue-500/10">
-                    <i class="fas fa-shield-halved text-4xl text-blue-400"></i>
+                <div class="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white/5 border border-white/10 mb-4 p-5 shadow-xl shadow-blue-500/10">
+                    <img src="{{ site_logo_base64|default:site_logo }}" alt="Logo" class="w-full h-full object-contain">
                 </div>
-                <h1 class="text-3xl font-black tracking-tight text-white">PREMIUM<span class="text-blue-400">VPN</span></h1>
-                <p class="text-gray-500 mt-1 text-sm">Cổng kết nối bảo mật của bạn</p>
+                <h1 class="text-3xl font-black tracking-tight text-white uppercase italic">{{ site_name }}</h1>
+                <p class="text-gray-500 mt-1 text-sm">{% trans 'Cổng kết nối bảo mật của bạn' %}</p>
             </div>
 
             <!-- Card -->
             <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
-                <h2 class="text-xl font-bold text-white mb-6">Đăng nhập tài khoản</h2>
+                <h2 class="text-xl font-bold text-white mb-6">{% trans 'Đăng nhập tài khoản' %}</h2>
 
                 <form method="post" class="space-y-5">
                     {% csrf_token %}
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Tên đăng nhập</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{% trans 'Tên đăng nhập' %}</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-user text-sm"></i></span>
                             <input type="text" name="username" required autofocus
                                 class="w-full bg-gray-950 border border-gray-800 rounded-xl py-3.5 pl-11 pr-4 text-white text-sm placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-                                placeholder="Nhập tên đăng nhập">
+                                placeholder="{% trans 'Nhập tên đăng nhập' %}">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Mật khẩu</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{% trans 'Mật khẩu' %}</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-4 flex items-center text-gray-600"><i class="fas fa-lock text-sm"></i></span>
                             <input type="password" name="password" required id="login-pw"
@@ -81,7 +82,7 @@
                     {% if form.errors or error %}
                     <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3">
                         <i class="fas fa-exclamation-triangle shrink-0"></i>
-                        <span>Tên đăng nhập hoặc mật khẩu không đúng.</span>
+                        <span>{% trans 'Tên đăng nhập hoặc mật khẩu không đúng.' %}</span>
                     </div>
                     {% endif %}
 
@@ -93,19 +94,19 @@
                     {% endfor %}
 
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center justify-center gap-2 group">
-                        <span>ĐĂNG NHẬP</span>
+                        <span>{% trans 'ĐĂNG NHẬP' %}</span>
                         <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
                     </button>
 
                     <div class="text-center">
-                        <a href="{% url 'password_reset' %}" class="text-xs text-gray-600 hover:text-blue-400 transition-colors">Quên mật khẩu?</a>
+                        <a href="{% url 'password_reset' %}" class="text-xs text-gray-600 hover:text-blue-400 transition-colors">{% trans 'Quên mật khẩu?' %}</a>
                     </div>
                 </form>
             </div>
 
             <p class="text-center text-gray-600 text-sm mt-6">
-                Chưa có tài khoản?
-                <a href="{% url 'register' %}" class="text-blue-400 hover:text-blue-300 font-bold ml-1 transition-colors">Đăng ký ngay →</a>
+                {% trans 'Chưa có tài khoản?' %}
+                <a href="{% url 'register' %}" class="text-blue-400 hover:text-blue-300 font-bold ml-1 transition-colors">{% trans 'Đăng ký ngay' %} →</a>
             </p>
         </div>
     </div>

@@ -1,11 +1,15 @@
-{% load static tailwind_tags %}
+{% load i18n static tailwind_tags %}
 {% load webpush_notifications %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}OpenVPN Manager{% endblock %}</title>
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     {% tailwind_css %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -19,66 +23,339 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_head %}{% endblock %}
+    <style>
+        :root {
+            --primary: 59, 130, 246;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-slide-in { animation: slideInUp 0.4s ease-out forwards; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12); /* Increased border contrast */
+        }
+
+        .clean-card {
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .clean-card:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+            background-color: rgba(15, 23, 42, 0.8);
+        }
+
+        .dropdown-solid {
+            background: #0f172a !important; /* solid slate-900 */
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .text-glow {
+            text-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Dropdown transition */
+        .dropdown-enter { opacity: 0; transform: scale(0.95) translateY(-10px); visibility: hidden; }
+        .dropdown-enter-active { opacity: 1; transform: scale(1) translateY(0); visibility: visible; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .dropdown-exit { opacity: 1; transform: scale(1) translateY(0); visibility: visible; }
+        .dropdown-exit-active { opacity: 0; transform: scale(0.95) translateY(-10px); visibility: hidden; transition: all 0.2s ease-in; }
+    </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+<body class="text-slate-200 min-h-screen flex flex-col selection:bg-blue-500/30">
+    <!-- Background Ambient Glows -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]"></div>
+        <div class="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px]"></div>
+        <div class="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] bg-purple-600/5 rounded-full blur-[120px]"></div>
+    </div>
+
     {% if not hide_nav %}
-    <nav class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-50">
+    <nav class="glass-nav sticky top-0 z-[100]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-10 w-auto" style="filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));">
-                    <span class="text-xl font-extrabold tracking-tight text-white italic">OPENVPN<span class="text-blue-500"> MANAGER</span></span>
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-4 group">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-blue-500/20 rounded-lg blur-md group-hover:bg-blue-500/40 transition-all duration-500"></div>
+                        <img src="{{ site_logo_base64|default:site_logo }}" alt="Logo" class="relative h-12 w-auto transition-transform duration-500 group-hover:scale-110" style="filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));">
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-black tracking-tighter text-white uppercase leading-none group-hover:text-blue-400 transition-colors">{{ site_name }}</span>
+                        <span class="text-[10px] font-bold text-blue-500/60 tracking-[0.3em] uppercase mt-1">Premium VPN</span>
+                    </div>
                 </div>
-                <div class="flex items-center gap-6">
-                    <a href="{% url 'installer_download' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Tải Installer</a>
-                    <a href="{% url 'otp_download' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Nhập OTP</a>
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'dashboard' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Dashboard</a>
-                        {% if user.is_staff %}
-                            <a href="{% url 'admin_user_manage' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Users</a>
-                            <a href="{% url 'admin:index' %}" class="text-sm font-medium hover:text-blue-400 transition-colors">Admin</a>
-                        {% endif %}
-                        <div class="flex items-center gap-3 pl-6 border-l border-gray-800">
-                            <span class="text-sm text-gray-400">{{ user.username }}</span>
-                            <form action="{% url 'logout' %}" method="post" class="inline">
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="{% url 'installer_download' %}" class="nav-link text-sm font-semibold text-slate-400 hover:text-white">{% trans "Tải Installer" %}</a>
+                    <a href="{% url 'otp_download' %}" class="nav-link text-sm font-semibold text-slate-400 hover:text-white">{% trans "Nhập OTP" %}</a>
+                    
+                    <!-- Language Switcher -->
+                    <div class="relative group/lang">
+                        <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 hover:bg-white/5 transition-all text-[10px] font-black uppercase text-slate-400 hover:text-white">
+                            <i class="fas fa-globe text-xs opacity-50"></i>
+                            {% if LANGUAGE_CODE == 'vi' %}VN{% else %}EN{% endif %}
+                        </button>
+                        <div class="absolute right-0 mt-2 w-32 dropdown-solid rounded-xl shadow-2xl opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all duration-200 z-[120]">
+                            <form action="{% url 'set_language' %}" method="post" class="p-1">
                                 {% csrf_token %}
-                                <button type="submit" class="text-sm font-semibold text-red-500 hover:text-red-400">Logout</button>
+                                <input name="next" type="hidden" value="{{ request.path }}">
+                                <button name="language" value="vi" class="w-full text-left px-4 py-2 text-[10px] font-bold rounded-lg hover:bg-white/5 {% if LANGUAGE_CODE == 'vi' %}text-blue-400{% else %}text-slate-400{% endif %}">Tiếng Việt</button>
+                                <button name="language" value="en" class="w-full text-left px-4 py-2 text-[10px] font-bold rounded-lg hover:bg-white/5 {% if LANGUAGE_CODE == 'en' %}text-blue-400{% else %}text-slate-400{% endif %}">English</button>
                             </form>
                         </div>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <div class="relative">
+                            <button id="user-menu-button" class="flex items-center gap-3 p-1.5 pr-4 rounded-full glass-card hover:bg-slate-800/60 transition-all duration-300 group">
+                                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all">
+                                    {{ user.username|slice:":1"|upper }}
+                                </div>
+                                <div class="flex flex-col items-start">
+                                    <span class="text-xs font-bold text-white leading-none">{{ user.username }}</span>
+                                    <span class="text-[9px] text-slate-500 font-medium mt-0.5">{% trans "Thành viên" %}</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-[9px] text-slate-500 group-hover:text-white transition-all ml-1" id="user-menu-chevron"></i>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div id="user-menu" class="absolute right-0 mt-4 w-72 dropdown-solid rounded-2xl shadow-2xl overflow-hidden dropdown-enter z-[110]">
+                                <div class="px-6 py-5 bg-white/5 border-b border-white/5 relative">
+                                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-[0.2em] mb-2">{% trans 'Tài khoản cá nhân' %}</p>
+                                    <p class="text-sm font-bold text-white truncate">{{ user.email|default:user.username }}</p>
+                                    <div class="absolute top-4 right-4 w-12 h-12 bg-blue-500/5 rounded-full blur-xl"></div>
+                                </div>
+                                <div class="p-2.5">
+                                    <a href="{% url 'dashboard' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 hover:text-white transition-all group">
+                                        <div class="w-9 h-9 rounded-lg bg-slate-800 group-hover:bg-blue-600 transition-colors flex items-center justify-center">
+                                            <i class="fas fa-home text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">{% trans 'Dashboard' %}</p>
+                                            <p class="text-[10px] text-slate-500">{% trans 'Trang chủ quản lý' %}</p>
+                                        </div>
+                                    </a>
+                                    <a href="{% url 'profile_update' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 hover:text-white transition-all group">
+                                        <div class="w-9 h-9 rounded-lg bg-slate-800 group-hover:bg-blue-600 transition-colors flex items-center justify-center">
+                                            <i class="fas fa-user-circle text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold">{% trans 'Hồ sơ' %}</p>
+                                            <p class="text-[10px] text-slate-500">{% trans 'Đổi mật khẩu, Email' %}</p>
+                                        </div>
+                                    </a>
+                                    {% if user.is_staff %}
+                                        <div class="h-px bg-white/5 my-2 mx-4"></div>
+                                        <a href="{% url 'admin_user_manage' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl text-indigo-300 hover:bg-indigo-500/10 hover:text-indigo-200 transition-all group">
+                                            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 group-hover:bg-indigo-600 transition-colors flex items-center justify-center text-indigo-400 group-hover:text-white">
+                                                <i class="fas fa-users-cog text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-bold">{% trans "Quản lý User" %}</p>
+                                                <p class="text-[10px] text-indigo-400/60">Admin Access</p>
+                                            </div>
+                                        </a>
+                                        <a href="{% url 'admin:index' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl text-indigo-300 hover:bg-indigo-500/10 hover:text-indigo-200 transition-all group">
+                                            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 group-hover:bg-indigo-600 transition-colors flex items-center justify-center text-indigo-400 group-hover:text-white">
+                                                <i class="fas fa-shield-halved text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-bold">{% trans "Hệ thống" %}</p>
+                                                <p class="text-[10px] text-indigo-400/60">Django Admin</p>
+                                            </div>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                <div class="p-2.5 bg-slate-900/50">
+                                    <form action="{% url 'logout' %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-all group">
+                                            <div class="w-9 h-9 rounded-lg bg-rose-500/10 group-hover:bg-rose-600 transition-colors flex items-center justify-center">
+                                                <i class="fas fa-power-off text-sm"></i>
+                                            </div>
+                                            <span class="text-sm font-black uppercase tracking-widest">{% trans 'Đăng xuất' %}</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     {% else %}
-                        <a href="{% url 'register' %}" class="text-sm font-semibold hover:text-blue-400 transition-colors">Đăng ký</a>
-                        <a href="{% url 'login' %}" class="text-sm font-semibold bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all">Login</a>
+                        <div class="flex items-center gap-4">
+                         <div class="flex items-center gap-4">
+                            <a href="{% url 'register' %}" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">{% trans "Đăng ký" %}</a>
+                            <a href="{% url 'login' %}" class="relative group">
+                                <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur opacity-25 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
+                                <button class="relative bg-blue-600 hover:bg-blue-700 text-white text-sm font-black px-8 py-3 rounded-xl transition-all shadow-xl shadow-blue-500/20">
+                                    {% trans "ĐĂNG NHẬP" %}
+                                </button>
+                            </a>
+                        </div>
+                        </div>
                     {% endif %}
                 </div>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-toggle" class="md:hidden flex items-center justify-center w-10 h-10 rounded-xl glass-card text-slate-400 hover:text-white transition-all">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden glass-nav border-t border-white/5 animate-slide-in">
+            <div class="px-4 pt-2 pb-6 space-y-2">
+                <a href="{% url 'installer_download' %}" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5">{% trans "Tải Installer" %}</a>
+                <a href="{% url 'otp_download' %}" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5">{% trans "Nhập OTP" %}</a>
+                {% if not user.is_authenticated %}
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <a href="{% url 'register' %}" class="flex items-center justify-center py-3 rounded-xl glass-card text-sm font-bold">{% trans "Đăng ký" %}</a>
+                    <a href="{% url 'login' %}" class="flex items-center justify-center py-3 rounded-xl bg-blue-600 text-sm font-bold text-white">{% trans "ĐĂNG NHẬP" %}</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </nav>
     {% endif %}
 
-    <main class="{% if not full_width %}max-w-7xl mx-auto px-4 sm:px-6 lg:px-8{% endif %} flex-grow {% if center_content %}flex items-center justify-center{% else %}py-8{% endif %}">
+    <main class="{% if not full_width %}max-w-7xl mx-auto px-4 sm:px-6 lg:px-8{% endif %} flex-grow {% if center_content %}flex items-center justify-center{% else %}py-10{% endif %} animate-fade-in">
         {% block content %}{% endblock %}
     </main>
 
     {% if not hide_nav %}
-    <footer class="border-t border-gray-800 py-8 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-            &copy; 2026 Premium VPN Management. All rights reserved.
+    <footer class="mt-auto py-16 border-t border-white/5 relative bg-slate-950/20">
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-10">
+                <div class="flex flex-col items-center md:items-start gap-4">
+                    <div class="flex items-center gap-3 opacity-80 group">
+                        <img src="{{ site_logo_base64|default:site_logo }}" alt="Logo" class="h-8 w-auto group-hover:scale-110 transition-transform">
+                        <span class="text-lg font-black uppercase tracking-tighter text-white">{{ site_name }}</span>
+                    </div>
+                    <p class="text-slate-500 text-xs font-medium max-w-xs text-center md:text-left">
+                        {{ footer_text }}
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-x-8 gap-y-4">
+                    {% for link in footer_links %}
+                    <a href="{{ link.url }}" class="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-colors">{{ link.label }}</a>
+                    {% empty %}
+                    <a href="{{ mess_link }}" class="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-colors">Support</a>
+                    <a href="#" class="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-colors">Privacy</a>
+                    {% endfor %}
+                </div>
+
+                <div class="flex flex-col items-center md:items-end gap-2">
+                    <div class="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                        &copy; {% now "Y" %} {{ site_name }}
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
     {% endif %}
 
-    {% if user.is_authenticated %}
     <script>
+        // Dropdown Logic
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userMenu = document.getElementById('user-menu');
+        const userMenuChevron = document.getElementById('user-menu-chevron');
+
+        if (userMenuButton && userMenu) {
+            const toggleMenu = (show) => {
+                if (show) {
+                    userMenu.classList.remove('dropdown-enter');
+                    userMenu.classList.add('dropdown-enter-active');
+                    userMenuChevron?.classList.add('rotate-180');
+                } else {
+                    userMenu.classList.remove('dropdown-enter-active');
+                    userMenu.classList.add('dropdown-enter');
+                    userMenuChevron?.classList.remove('rotate-180');
+                }
+            };
+
+            userMenuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = userMenu.classList.contains('dropdown-enter-active');
+                toggleMenu(!isVisible);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!userMenu.contains(e.target) && !userMenuButton.contains(e.target)) {
+                    toggleMenu(false);
+                }
+            });
+        }
+
+        // Mobile Menu Toggle
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenuToggle && mobileMenu) {
+            mobileMenuToggle.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                    console.log('SW Registered at root');
+                    // console.log('SW Registered');
                 }).catch(function(err) {
                     console.log('SW Registration failed: ', err);
                 });
             });
         }
     </script>
-    {% endif %}
 </body>
 </html>

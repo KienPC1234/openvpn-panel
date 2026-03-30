@@ -11,18 +11,14 @@ from django.contrib.auth import login as auth_login
 from django.db.models import Q
 from django.contrib import messages
 from django.core.mail import send_mail
-import secrets, os, random
+import base64
+import secrets, os, random, logging
 from datetime import timedelta
 from django.utils import timezone
 from .models import Client, CustomUser, OTPCode, Setting
 from .services import VPNService
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-import os, logging
 from django.utils.translation import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -51,6 +47,56 @@ VPN Manager Team
         import logging
         logging.getLogger(__name__).error(f"Failed to send OTP email: {e}")
         return False
+
+
+from django.contrib.staticfiles import finders
+
+def get_image_base64(path):
+    """Converts a local static image to a base64 data URI."""
+    if not path or path.startswith('data:'):
+        return path
+        
+    try:
+        # Clean the path for searching
+        search_path = path
+        if path.startswith('/static/'):
+            search_path = path.replace('/static/', '', 1)
+        
+        # 1. Try Django's builtin finders (best for dev and multi-app static)
+        full_path = finders.find(search_path)
+        
+        if not full_path:
+            # 2. Fallback to manual check in project-wide folders
+            locs = [
+                os.path.join(settings.BASE_DIR, 'static', search_path),
+                os.path.join(settings.BASE_DIR, 'staticfiles', search_path), # production static
+                os.path.join(settings.BASE_DIR, 'theme/static', search_path),
+            ]
+            for loc in locs:
+                if os.path.exists(loc):
+                    full_path = loc
+                    break
+                    
+        if full_path and os.path.exists(full_path):
+            with open(full_path, "rb") as image_file:
+                ext = os.path.splitext(full_path)[1].lower().replace('.', '')
+                if ext == 'jpg': ext = 'jpeg'
+                elif ext == 'svg': ext = 'svg+xml'
+                
+                content = image_file.read()
+                if not content:
+                    logger.warning(f"Static file {full_path} is empty.")
+                    return path
+                    
+                encoded_string = base64.b64encode(content).decode('utf-8')
+                return f"data:image/{ext};base64,{encoded_string}"
+        else:
+            logger.warning(f"Static file NOT found for base64 encoding: {path}")
+            
+    except Exception as e:
+        logger.error(f"Error encoding image to base64 for path {path}: {str(e)}")
+        
+    return path
 
 
 class RegisterView(View):
@@ -150,52 +196,59 @@ class VerifyRegisterOTPView(View):
                 'error': f'Mã OTP không đúng. Vui lòng thử lại.'
             })
 
-        # OTP correct → Create user with 3-day demo
+        # OTP correct → Create user
         try:
-            user = CustomUser(
-                username=reg['username'],
-                email=reg['email'],
-                full_name=reg.get('full_name', ''),
-                purchase_date=timezone.now().date(),
-                duration_days=3,
-                status='DEMO',
-                is_vpn_enabled=True,
-            )
-            user.set_password(reg['password'])
-            user.save()
-
-            # --- Welcome Email ---
-            try:
-                scheme = 'https' if request.is_secure() else 'http'
-                site_url = f"{scheme}://{request.get_host()}"
-                html_content = render_to_string('emails/welcome_email.html', {
-                    'username': user.username,
-                    'password': reg['password'],
-                    'full_name': user.full_name,
-                    'site_url': site_url
-                })
-                send_mail(
-                    subject='Chào mừng tới VPN Panel!',
-                    message=strip_tags(html_content),
-                    from_email=None, 
-                    recipient_list=[user.email],
-                    html_message=html_content,
-                    fail_silently=True
+            from django.db import transaction, IntegrityError
+            with transaction.atomic():
+                free_days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '3'))
+                user = CustomUser(
+                    username=reg['username'],
+                    email=reg['email'],
+                    full_name=reg.get('full_name', ''),
+                    purchase_date=timezone.now().date(),
+                    duration_days=free_days,
+                    status='ACTIVE',
+                    is_vpn_enabled=True,
                 )
-            except Exception as e:
-                logger.error(f"Failed to send welcome email: {e}")
+                user.set_password(reg['password'])
+                try:
+                    user.save()
+                except IntegrityError:
+                    return render(request, self.template_name, {
+                        'email': email,
+                        'error': 'Tên đăng nhập hoặc Email này đã bị người khác đăng ký. Vui lòng đăng ký lại.'
+                    })
 
-            # Create VPN client
-            success, result = VPNService.add_client(user.username)
-            if success:
-                Client.objects.get_or_create(name=result, user=user)
+                # --- Welcome Email via Celery ---
+                try:
+                    from .tasks import send_welcome_email_task
+                    scheme = 'https' if request.is_secure() else 'http'
+                    site_url = f"{scheme}://{request.get_host()}"
+                    
+                    # Use on_commit safely since we are inside transaction.atomic()
+                    transaction.on_commit(lambda: send_welcome_email_task.delay(
+                        user.pk,
+                        reg['password'], 
+                        site_url,
+                        False, # public user, not admin
+                        email=user.email # Pass email directly as fallback
+                    ))
+                except Exception as e:
+                    logger.error(f"Failed to schedule register welcome email: {e}")
 
-            # Clear session
+                # Create VPN client
+                success, result = VPNService.add_client(user.username)
+                if success:
+                    client, _ = Client.objects.get_or_create(user=user, defaults={'name': result})
+                    client.has_ovpn_file = True
+                    client.save()
+
+            # Clear session after successful transaction
             del request.session['pending_registration']
 
             # Log user in
             auth_login(request, user)
-            messages.success(request, '🎉 Chào mừng! Tài khoản đã được xác thực. Bạn có 3 ngày dùng thử miễn phí!')
+            messages.success(request, f'🎉 Chào mừng! Tài khoản đã được xác thực. Bạn có {free_days} ngày dùng thử miễn phí!')
             return redirect('dashboard')
 
         except Exception as e:
@@ -214,10 +267,23 @@ class DashboardView(LoginRequiredMixin, View):
             return redirect('profile_update')
         
         usage = user.usage_logs.first()
+        if not usage:
+            # Fallback to realtime if DB log is empty
+            real_usage = VPNService.get_per_user_usage().get(user.username)
+            if real_usage:
+                usage = type('obj', (object,), {'bytes_received': real_usage['rx'], 'bytes_sent': real_usage['tx']})
+
+        # Get QR code for payment if locked/expired
+        qr_setting = Setting.objects.filter(key='PORTAL_QR_CODE').first()
+        qr_path = qr_setting.value if (qr_setting and qr_setting.value) else VPNService.get_vpn_setting('PORTAL_QR_FALLBACK', "/static/images/qr.png")
+        qr_code = get_image_base64(qr_path)
+
         return render(request, 'dashboard.html', {
             'user_profile': user,
             'usage': usage,
-            'remaining_days': user.remaining_days
+            'remaining_days': user.remaining_days,
+            'qr_code': qr_code,
+            'status_text': user.status_text
         })
 
 class ProfileUpdateView(LoginRequiredMixin, View):
@@ -227,48 +293,60 @@ class ProfileUpdateView(LoginRequiredMixin, View):
     def post(self, request):
         user = request.user
         email = request.POST.get('email')
+        full_name = request.POST.get('full_name')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
 
-        if not email or not password or password != confirm_password:
-            return render(request, 'profile_update.html', {'error': 'Invalid data or passwords do not match'})
+        if not email:
+            messages.error(request, 'Email là bắt buộc để quản lý tài khoản.')
+            return render(request, 'profile_update.html')
+
+        # Check for password update
+        if password:
+            if password != confirm_password:
+                messages.error(request, 'Mật khẩu mới không khớp.')
+                return render(request, 'profile_update.html')
+            user.set_password(password)
+            auth_login(request, user) # Re-login after password change
 
         user.email = email
-        user.set_password(password)
+        if full_name is not None:
+            user.full_name = full_name
+            
+        was_locked = user.requires_profile_update
         user.requires_profile_update = False
         user.save()
         
-        # --- Welcome Email ---
-        try:
-            scheme = 'https' if request.is_secure() else 'http'
-            site_url = f"{scheme}://{request.get_host()}"
-            html_content = render_to_string('emails/welcome_email.html', {
-                'username': user.username,
-                'password': password,
-                'full_name': user.full_name,
-                'site_url': site_url
-            })
-            text_content = strip_tags(html_content)
-            
-            send_mail(
-                subject='Chào mừng tới VPN Panel!',
-                message=text_content,
-                from_email=None, 
-                recipient_list=[user.email],
-                html_message=html_content,
-                fail_silently=True
-            )
-            logger.info(f"Welcome email sent to {user.email}")
-        except Exception as e:
-            logger.error(f"Failed to send welcome email: {e}")
+        # --- Welcome Email (Only if it was a setup/lock) ---
+        if was_locked:
+            try:
+                from .tasks import send_welcome_email_task
+                scheme = 'https' if request.is_secure() else 'http'
+                site_url = f"{scheme}://{request.get_host()}"
+                
+                # Pass plain pass only if just changed
+                email_pass = password if password else "******** (Đã giữ nguyên)"
+                
+                # Use celery task
+                from django.db import transaction
+                transaction.on_commit(lambda: send_welcome_email_task.delay(
+                    user.pk,
+                    email_pass, 
+                    site_url,
+                    False, # not admin
+                    email=user.email
+                ))
+                logger.info(f"Welcome email scheduled for {user.email}")
+            except Exception as e:
+                logger.error(f"Failed to schedule welcome email: {e}")
         
-        # Ensure VPN client exists for the user
+        # Ensure VPN client exists for the user (in case of manual import)
         if not hasattr(user, 'vpn_client'):
             success, result = VPNService.add_client(user.username)
             if success:
                 Client.objects.get_or_create(name=result, user=user)
 
-        auth_login(request, user) # Re-login after password change
+        messages.success(request, 'Thông tin tài khoản đã được cập nhật thành công!')
         return redirect('dashboard')
 
 # ... other views remain, just ensure they use correct models ...
@@ -405,8 +483,19 @@ class AdminUserManageView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request):
         form = AdminUserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Đã tạo tài khoản mới thành công!")
+            user = form.save()
+            
+            from .services import VPNService
+            success, result = VPNService.add_client(user.username)
+            if success:
+                from .models import Client
+                client, _ = Client.objects.get_or_create(user=user, defaults={'name': result})
+                client.has_ovpn_file = True
+                client.save()
+                messages.success(request, f"Đã tạo tài khoản {user.username} và tạo tệp OVPN thành công!")
+            else:
+                messages.warning(request, f"Đã tạo user {user.username} nhưng khởi tạo OVPN thất bại: {result}")
+                
             return redirect('admin_user_manage')
         
         users = CustomUser.objects.exclude(is_superuser=True).order_by('-id')
@@ -449,10 +538,15 @@ class AdminUserToggleLockView(LoginRequiredMixin, UserPassesTestMixin, View):
                 
                 ip = user.vpn_client.ip_address or "0.0.0.0"
                 action = "unlock" if user.is_vpn_enabled else "lock"
-                VPNService.toggle_lock(user.vpn_client.name, ip, action)
+                firewall_success, msg = VPNService.toggle_lock(user.vpn_client.name, ip, action)
+            else:
+                firewall_success, msg = False, "Chưa có VPN Client"
             
             status = "MỞ" if user.is_vpn_enabled else "KHÓA"
-            messages.success(request, f"Đã {status} tài khoản {user.username}")
+            if not firewall_success:
+                messages.warning(request, f"Đã {status} trên CSDL, nhưng chưa {status} được trên tưởng lửa (Có thể người dùng lấy IP 0.0.0.0): {msg}")
+            else:    
+                messages.success(request, f"Đã {status} tài khoản {user.username}")
         return redirect('admin_user_manage')
 
 class LockedView(View):
@@ -466,16 +560,34 @@ class LockedView(View):
         
         logo = VPNService.get_vpn_setting('PORTAL_LOGO', "/static/images/logo.png")
         
-        return render(request, 'locked.html', {
-            'qr_code': qr_path,
+        response = render(request, 'locked.html', {
+            'qr_code': get_image_base64(qr_path),
             'group_link': group_link,
-            'logo': logo
+            'logo': get_image_base64(logo),
+            'site_name': VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')
         })
+        
+        # Explicitly remove/reset COOP/COEP for HTTP Captive Portal environments
+        # because browsers reject these headers from untrustworthy origins (HTTP).
+        # We manually set them to ensure we override any middleware.
+        response["Cross-Origin-Opener-Policy"] = "unsafe-none"
+        response["Cross-Origin-Embedder-Policy"] = "unsafe-none"
+        # Force removal of the header if still causing issues on some browsers
+        if "Cross-Origin-Opener-Policy" in response:
+             del response["Cross-Origin-Opener-Policy"]
+        if "Cross-Origin-Embedder-Policy" in response:
+             del response["Cross-Origin-Embedder-Policy"]
+             
+        return response
 
 class PortalRedirectView(View):
     """Redirects all captive portal probes to the locked page"""
     def get(self, request):
-        return redirect('locked')
+        response = redirect('locked')
+        # Ensure the redirect response also avoids the COOP warning
+        if "Cross-Origin-Opener-Policy" in response:
+             del response["Cross-Origin-Opener-Policy"]
+        return response
 
 class PortalSuccessView(View):
     """Fallback success for probes that don't need redirect"""

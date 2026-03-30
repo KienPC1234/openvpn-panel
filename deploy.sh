@@ -30,6 +30,34 @@ echo -e "${CYAN}=====================================================${NC}"
 echo ""
 
 # --------------------------------------------------------------------
+# 0. CODE VERIFICATION (PRE-CHECK)
+# --------------------------------------------------------------------
+log "Đang kiểm tra lỗi cú pháp Python (compileall)..."
+if $PYTHON -m compileall -q . ; then
+    ok "Cú pháp Python hợp lệ"
+else
+    fail "Lỗi cú pháp Python phát hiện!"
+fi
+
+log "Đang chạy Django System Check..."
+if $PYTHON manage.py check 2>&1; then
+    ok "Hệ thống Django ổn định"
+else
+    fail "Kiểm tra hệ thống Django thất bại!"
+fi
+
+log "Đang kiểm tra và áp dụng Migration tự động..."
+if $PYTHON manage.py makemigrations --noinput 2>&1; then
+    if $PYTHON manage.py migrate --noinput 2>&1; then
+        ok "Cập nhật Database hoàn tất"
+    else
+        fail "Lỗi khi áp dụng Migration (migrate)."
+    fi
+else
+    fail "Lỗi phát sinh khi sinh file Migration (makemigrations)."
+fi
+
+# --------------------------------------------------------------------
 # 1. BUILD TAILWIND CSS
 # --------------------------------------------------------------------
 log "Đang build Tailwind CSS..."

@@ -5,13 +5,14 @@ class RegistrationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Mật khẩu'}), label="Mật khẩu")
     confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Xác nhận mật khẩu'}), label="Xác nhận mật khẩu")
 
+    email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': 'Email (Bắt buộc)'}), required=True, label="Email")
+
     class Meta:
         model = CustomUser
         fields = ['username', 'password', 'full_name', 'email']
         widgets = {
             'username': forms.TextInput(attrs={'placeholder': 'Tên đăng nhập'}),
             'full_name': forms.TextInput(attrs={'placeholder': 'Họ và Tên'}),
-            'email': forms.EmailInput(attrs={'placeholder': 'Email (Không bắt buộc)'}),
         }
 
     def clean(self):

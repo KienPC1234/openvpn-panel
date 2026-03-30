@@ -1,40 +1,185 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chào mừng bạn đến với {{ site_name }}</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1a56db; color: #ffffff; padding: 30px; text-align: center; border-radius: 12px 12px 0 0; }
-        .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 12px 12px; }
-        .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px; }
-        .creds { background: #f9fafb; border: 1px dashed #d1d5db; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .creds p { margin: 5px 0; font-family: monospace; }
-        .btn { display: inline-block; background: #1a56db; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --bg-gray: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            padding: 48px 32px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+        .header p {
+            margin: 8px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px 32px;
+        }
+        .greeting {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #0f172a;
+        }
+        .message {
+            color: #475569;
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+        .creds-container {
+            background-color: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        .creds-title {
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+        }
+        .creds-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .creds-label {
+            font-weight: 600;
+            color: #475569;
+            width: 100px;
+        }
+        .creds-value {
+            font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .cta-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: #ffffff !important;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
+            transition: all 0.2s ease;
+        }
+        .footer {
+            text-align: center;
+            padding: 32px;
+            color: #64748b;
+            font-size: 13px;
+            background-color: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+        }
+        .notice {
+            margin-top: 32px;
+            padding: 16px;
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #92400e;
+        }
+        @media only screen and (max-width: 640px) {
+            .container {
+                margin: 0;
+                width: 100%;
+                border-radius: 0;
+            }
+            .content {
+                padding: 32px 20px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Chào mừng tới VPN Panel!</h1>
-    </div>
-    <div class="content">
-        <p>Xin chào <strong>{{ full_name|default:username }}</strong>,</p>
-        <p>Tài khoản VPN của bạn đã sẵn sàng sử dụng. Dưới đây là thông tin đăng nhập của bạn:</p>
-        
-        <div class="creds">
-            <p><strong>Username:</strong> {{ username }}</p>
-            <p><strong>Password:</strong> {{ password }}</p>
+    <div class="container">
+        <div class="header">
+            <div style="font-size: 40px; margin-bottom: 15px;">🌐</div>
+            <h1>{{ site_name }}</h1>
+            <p>Kết nối của bạn, quyền kiểm soát của bạn.</p>
         </div>
+        <div class="content">
+            <div class="greeting">Chào bạn, {{ full_name|default:username }}! 👋</div>
+            <div class="message">
+                {% if is_admin %}
+                    Chúc mừng! Tài khoản <strong>Quản trị viên</strong> của bạn đã được thiết lập thành công. Bạn đã có toàn quyền truy cập để quản lý hệ thống.
+                {% else %}
+                    Tài khoản VPN của bạn đã được khởi tạo thành công và sẵn sàng để sử dụng ngay bây giờ.
+                {% endif %}
+                Dưới đây là thông tin đăng nhập của bạn:
+            </div>
+            
+            <div class="creds-container">
+                <div class="creds-title">Thông tin truy cập</div>
+                <div class="creds-row">
+                    <span class="creds-label">Tài khoản:</span>
+                    <span class="creds-value">{{ username }}</span>
+                </div>
+                <div class="creds-row">
+                    <span class="creds-label">Mật khẩu:</span>
+                    <span class="creds-value">{{ password }}</span>
+                </div>
+            </div>
 
-        <p>Bạn có thể đăng nhập vào trang quản lý để tải file cấu hình VPN (.ovpn) và bắt đầu sử dụng.</p>
-        
-        <a href="{{ site_url }}" class="btn">Đến Dashboard ngay</a>
+            <p style="color: #475569;">Bây giờ bạn có thể đăng nhập vào trang quản lý để tải tập tin cấu hình VPN (.ovpn) hoặc quản lý tài khoản của mình.</p>
+            
+            <div class="cta-container">
+                <a href="{{ site_url }}" class="btn">🚀 Bắt đầu ngay bây giờ</a>
+            </div>
 
-        <p style="margin-top: 30px; font-size: 14px; color: #666;">
-            <em>Lưu ý: Để bảo mật, hãy đổi mật khẩu sau khi đăng nhập nếu đây là mật khẩu tạm thời.</em>
-        </p>
-    </div>
-    <div class="footer">
-        <p>&copy; 2026 VPN Management System. Powered by KienPC.</p>
+            <div class="notice">
+                <strong>💡 Lưu ý quan trọng:</strong> Vì lý do bảo mật, vui lòng thay đổi mật khẩu của bạn ngay sau khi đăng nhập lần đầu tiên.
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; {% now "Y" %} {{ site_name }} • VPN Panel Modern</p>
+            <p>{{ footer_text|default:"Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi." }}</p>
+            <p style="margin-top: 10px; font-size: 11px; opacity: 0.7;">
+                Bản email này được gửi tự động, vui lòng không phản hồi qua email này.
+            </p>
+        </div>
     </div>
 </body>
 </html>
