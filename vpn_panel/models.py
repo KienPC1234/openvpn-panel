@@ -17,7 +17,7 @@ class CustomUser(AbstractUser):
         ('ACTIVE', _('Đang hoạt động')),
         ('EXPIRED', _('Hết hạn')),
         ('CANCELED', _('Đã hủy')),
-        ('DEMO', _('Dùng thử (3 ngày)')),
+        ('DEMO', _('Dùng thử (1 ngày)')),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
     
@@ -31,10 +31,16 @@ class CustomUser(AbstractUser):
     def save(self, *args, **kwargs):
         from .services import VPNService
         
+        # Ensure DateFields are actual date objects (can be datetime if just assigned or from default)
+        if self.purchase_date and hasattr(self.purchase_date, 'date'):
+            self.purchase_date = self.purchase_date.date()
+        if self.expiry_date and hasattr(self.expiry_date, 'date'):
+            self.expiry_date = self.expiry_date.date()
+
         old_user = CustomUser.objects.filter(pk=self.pk).first()
         is_new = self.pk is None
         today = timezone.now().date()
-        grace_days = int(VPNService.get_vpn_setting('GRACE_PERIOD_DAYS', '3'))
+        grace_days = int(VPNService.get_vpn_setting('GRACE_PERIOD_DAYS', '0'))
         
         # 1. Update Expiry Date if purchase_date/duration_days changed
         subscription_updated = False
@@ -52,13 +58,13 @@ class CustomUser(AbstractUser):
         
         if self.status != 'CANCELED':
             if self.expiry_date:
-                if self.expiry_date < (today - timedelta(days=grace_days)):
+                if self.expiry_date <= (today - timedelta(days=grace_days + 1)):
                     self.status = 'EXPIRED'
                     self.is_vpn_enabled = False # Force lock after grace period
                 elif self.expiry_date < today:
                     self.status = 'EXPIRED'
                     # We DON'T force lock yet, allowing grace period
-                elif self.duration_days == 3:
+                elif self.duration_days == 1:
                     self.status = 'DEMO'
                 else:
                     self.status = 'ACTIVE'
@@ -73,36 +79,47 @@ class CustomUser(AbstractUser):
         # If admin toggles is_vpn_enabled to True on an expired user, we give them extension
         if old_user and not old_user.is_vpn_enabled and self.is_vpn_enabled:
              if self.expiry_date and self.expiry_date < today:
-                ext_days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '3'))
-                # Shift duration forward
-                if not self.purchase_date: self.purchase_date = today
-                delta = today - self.purchase_date
-                self.duration_days = delta.days + ext_days
-                self.expiry_date = self.purchase_date + timedelta(days=self.duration_days)
+                # Ensure they get at least 1 day from today
+                self.expiry_date = today + timedelta(days=1)
+                if self.purchase_date:
+                    self.duration_days = (self.expiry_date - self.purchase_date).days
+                else:
+                    self.purchase_date = today
+                    self.duration_days = 1
                 self.status = 'ACTIVE'
         
         super().save(*args, **kwargs)
 
-        # 4. Sync with OpenVPN System (only if status changed)
-        if not is_new and old_user:
-            if old_user.is_vpn_enabled != self.is_vpn_enabled:
-                mode = "unlock" if self.is_vpn_enabled else "lock"
-                # Sync to Client model as well
-                if hasattr(self, 'vpn_client'):
-                    self.vpn_client.is_locked = not self.is_vpn_enabled
-                    self.vpn_client.save(update_fields=['is_locked'])
+        # 4. Sync with OpenVPN System (only if status changed or inconsistent)
+        if not is_new:
+            mode = "unlock" if self.is_vpn_enabled else "lock"
+            client = getattr(self, 'vpn_client', None)
+            
+            # Check if sync is needed (either status changed, or DB state is inconsistent)
+            status_changed = old_user and old_user.is_vpn_enabled != self.is_vpn_enabled
+            is_inconsistent = client and client.is_locked == self.is_vpn_enabled
+            
+            if status_changed or is_inconsistent:
+                if client:
+                    client.is_locked = not self.is_vpn_enabled
+                    client.save(update_fields=['is_locked'])
                     
                     from django.db import transaction
                     from .tasks import apply_vpn_lock_state
                     # Execute the task asynchronously ONLY AFTER the current DB transaction commits
-                    transaction.on_commit(lambda: apply_vpn_lock_state.delay(self.vpn_client.name, mode, self.pk))
+                    transaction.on_commit(lambda: apply_vpn_lock_state.delay(client.name, mode, self.pk))
 
     @property
     def remaining_days(self):
         if not self.expiry_date or self.is_superuser or self.expiry_date.year > 2099:
             return 999999 # Treat as infinite
-        delta = self.expiry_date - timezone.now().date()
-        return max(0, delta.days)
+        
+        expiry = self.expiry_date
+        if hasattr(expiry, 'date'):
+            expiry = expiry.date()
+
+        delta = expiry - timezone.now().date()
+        return delta.days
 
     @property
     def status_text(self):
@@ -116,16 +133,24 @@ class CustomUser(AbstractUser):
         """Used in Admin to show more accurate state."""
         from .services import VPNService
         if self.remaining_days <= 0: return "Expired"
-        # Check if connected
+        
         online_users = VPNService.get_online_users()
-        if self.username in online_users:
+        is_online = self.username in online_users
+        
+        # Check for Lock (either in DB or live in Firewall)
+        is_sys_locked = VPNService.is_user_locked(self.username)
+        is_db_locked = not self.is_vpn_enabled
+        
+        if is_sys_locked or is_db_locked:
+            status = "Locked"
+            if is_sys_locked and not is_db_locked: status += " (Manual Rule)"
+            elif is_db_locked and not is_sys_locked: status += " (Pending Connection)"
+            return status
+            
+        if is_online:
             return "Connected"
-        # Check if locked in system
-        if VPNService.is_user_locked(self.username):
-            return "Locked (System)"
-        if not self.is_vpn_enabled:
-            return "Locked (DB)"
-        return "Active"
+            
+        return "Active (Disconnected)"
 
 class OTPCode(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='otps', null=True, blank=True)
@@ -238,3 +263,28 @@ class SystemLog(TaskLog):
         proxy = True
         verbose_name = "Nhật ký Hệ thống"
         verbose_name_plural = "Nhật ký Hệ thống (Logs)"
+
+class InstallerFile(models.Model):
+    file = models.FileField(upload_to='openvpn_installer/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Tệp Cài đặt"
+        verbose_name_plural = "Tệp Cài đặt"
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.file.name.split('/')[-1]
+
+    def delete(self, *args, **kwargs):
+        # Delete physical file when record is deleted
+        if self.file:
+            if self.file.storage.exists(self.file.name):
+                self.file.storage.delete(self.file.name)
+        super().delete(*args, **kwargs)
+
+class InstallerManager(Setting):
+    class Meta:
+        proxy = True
+        verbose_name = "Quản lý Installer"
+        verbose_name_plural = "Quản lý Installer"

@@ -18,7 +18,7 @@
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{% trans 'quyền riêng tư' %}</span><br>
                 {% trans 'của bạn.' %}
             </h2>
-            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">{% trans 'Tạo tài khoản và trải nghiệm VPN cao cấp với 3 ngày dùng thử miễn phí hoàn toàn.' %}</p>
+            <p class="text-gray-500 text-base leading-relaxed max-w-sm mb-8">{% blocktrans %}Tạo tài khoản và trải nghiệm VPN cao cấp với {{ unlock_free_days }} ngày dùng thử miễn phí hoàn toàn.{% endblocktrans %}</p>
 
             <div class="flex flex-col gap-4">
                 <div class="flex items-start gap-4">
@@ -38,7 +38,7 @@
                 <div class="flex items-start gap-4">
                     <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400 font-black text-sm">3</div>
                     <div>
-                        <div class="text-white text-sm font-bold">{% trans 'Nhận 3 ngày DEMO miễn phí' %}</div>
+                        <div class="text-white text-sm font-bold">{% blocktrans %}Nhận {{ unlock_free_days }} ngày DEMO miễn phí{% endblocktrans %}</div>
                         <div class="text-gray-600 text-xs mt-0.5">{% trans 'Trải nghiệm VPN cao cấp ngay lập tức' %}</div>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                     <img src="{{ site_logo_base64|default:site_logo }}" alt="Logo" class="w-full h-full object-contain">
                 </div>
                 <h1 class="text-3xl font-black tracking-tight text-white uppercase italic">{{ site_name }}</h1>
-                <p class="text-gray-500 mt-1 text-sm">{% trans 'Đăng ký miễn phí · Nhận ngay' %} <span class="text-indigo-400 font-bold">{% trans '3 ngày DEMO' %}</span></p>
+                <p class="text-gray-500 mt-1 text-sm">{% trans 'Đăng ký miễn phí · Nhận ngay' %} <span class="text-indigo-400 font-bold">{% blocktrans %}{{ unlock_free_days }} ngày DEMO{% endblocktrans %}</span></p>
             </div>
 
             <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
@@ -66,7 +66,7 @@
                 </div>
                 {% endif %}
 
-                <form method="post" class="space-y-4">
+                <form method="post" class="space-y-4" id="register-form">
                     {% csrf_token %}
 
                     <div>
@@ -129,6 +129,7 @@
                         </div>
                     </div>
 
+
                     <!-- Demo bonus badge -->
                     <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
                         <div class="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center shrink-0">
@@ -136,11 +137,15 @@
                         </div>
                         <div>
                             <div class="text-indigo-300 text-xs font-bold">{% trans 'Ưu đãi chào mừng' %}</div>
-                            <div class="text-gray-600 text-[11px]">{% trans 'Xác thực email → nhận ngay' %} <b class="text-indigo-400">{% trans '3 ngày dùng thử MIỄN PHÍ' %}</b></div>
+                            <div class="text-gray-600 text-[11px]">{% trans 'Xác thực email → nhận ngay' %} <b class="text-indigo-400">{% blocktrans %}{{ unlock_free_days }} ngày dùng thử MIỄN PHÍ{% endblocktrans %}</b></div>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all duration-200 flex items-center justify-center gap-2 group">
+                    <button type="submit" 
+                        class="g-recaptcha w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all duration-200 flex items-center justify-center gap-2 group"
+                        data-sitekey="{{ recaptcha_site_key }}" 
+                        data-callback='onRegisterSubmit' 
+                        data-action='submit'>
                         <i class="fas fa-paper-plane text-xs"></i>
                         <span>{% trans 'TẠO TÀI KHOẢN' %}</span>
                         <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
@@ -156,7 +161,12 @@
     </div>
 </div>
 
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
+function onRegisterSubmit(token) {
+    document.getElementById("register-form").submit();
+}
+
 function togglePw(id, iconId) {
     const inp = document.getElementById(id);
     const icon = document.getElementById(iconId);

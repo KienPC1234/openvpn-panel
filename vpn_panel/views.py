@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import CreateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views import View
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 from django.urls import reverse
 from django.conf import settings
 from .forms import RegistrationForm
@@ -11,7 +11,7 @@ from django.contrib.auth import login as auth_login
 from django.db.models import Q
 from django.contrib import messages
 from django.core.mail import send_mail
-import base64
+import base64, requests
 import secrets, os, random, logging
 from datetime import timedelta
 from django.utils import timezone
@@ -25,27 +25,35 @@ logger = logging.getLogger(__name__)
 
 
 def _send_register_otp(email, otp_code):
-    """Send OTP email for registration verification."""
+    """Send OTP email for registration verification using HTML template."""
     subject = "Mã xác thực tài khoản VPN Manager"
-    body = f"""Xin chào,
-
-Mã xác thực OTP của bạn là:
-
-    {otp_code}
-
-Mã này có hiệu lực trong 10 phút. Không chia sẻ mã này với bất kỳ ai.
-
-Sau khi xác thực, bạn sẽ nhận được 3 ngày dùng thử miễn phí!
-
-Trân trọng,
-VPN Manager Team
-"""
+    site_name = VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')
+    admin_email = VPNService.get_vpn_setting('ADMIN_EMAIL', settings.DEFAULT_FROM_EMAIL)
+    admin_phone = VPNService.get_vpn_setting('ADMIN_PHONE', 'N/A')
+    
+    message_body = f"Chào mừng bạn đến với {site_name}! Mã xác thực OTP của bạn là:\n\n{otp_code}\n\nMã có hiệu lực trong 10 phút. Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email."
+    
+    html_content = render_to_string('emails/notification_email.html', {
+        'subject': subject,
+        'user_name': email,
+        'message_body': message_body,
+        'site_name': site_name,
+        'support_email': admin_email,
+        'support_phone': admin_phone,
+    })
+    
     try:
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
+        send_mail(
+            subject,
+            f"Mã OTP của bạn là: {otp_code}",
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            html_message=html_content,
+            fail_silently=False
+        )
         return True
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Failed to send OTP email: {e}")
+        logger.error(f"Failed to send OTP email to {email}: {e}")
         return False
 
 
@@ -99,6 +107,46 @@ def get_image_base64(path):
     return path
 
 
+def _verify_recaptcha(request):
+    """Verify Google reCAPTCHA v2 token."""
+    token = request.POST.get('g-recaptcha-response')
+    if not token:
+        logger.warning("reCAPTCHA token missing in request.")
+        return False
+        
+    try:
+        response = requests.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            data={
+                'secret': settings.RECAPTCHA_SECRET_KEY,
+                'response': token
+            },
+            timeout=10
+        )
+        result = response.json()
+        success = result.get('success', False)
+        if not success:
+            logger.warning(f"reCAPTCHA verification failed: {result.get('error-codes')}")
+        return success
+    except Exception as e:
+        logger.error(f"reCAPTCHA verification error: {e}")
+        # In case of network error, we might want to fail-safe or fail-strict.
+        # Failing strict for security.
+        return False
+
+
+from django.contrib.auth.views import LoginView as DjangoLoginView
+
+class CustomLoginView(DjangoLoginView):
+    template_name = 'login.html'
+    
+    def post(self, request, *args, **kwargs):
+        if not _verify_recaptcha(request):
+            messages.error(request, 'Xác thực reCAPTCHA thất bại. Vui lòng thử lại.')
+            return self.get(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
+
+
 class RegisterView(View):
     template_name = 'register.html'
 
@@ -111,6 +159,13 @@ class RegisterView(View):
     def post(self, request):
         if request.user.is_authenticated:
             return redirect('dashboard')
+            
+        # reCAPTCHA Check
+        if not _verify_recaptcha(request):
+            messages.error(request, 'Xác thực reCAPTCHA thất bại. Vui lòng thử lại.')
+            form = RegistrationForm(request.POST)
+            return render(request, self.template_name, {'form': form})
+            
         form = RegistrationForm(request.POST)
 
         # Make email required for registration
@@ -131,8 +186,8 @@ class RegisterView(View):
                 form.add_error('email', 'Email này đã được đăng ký.')
                 return render(request, self.template_name, {'form': form})
 
-            # Generate 6-digit OTP
-            otp_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+            # Generate 6-digit OTP using CSRNG
+            otp_code = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
 
             # Store registration data in session (not in DB yet)
             request.session['pending_registration'] = {
@@ -190,7 +245,11 @@ class VerifyRegisterOTPView(View):
             })
 
         # Validate OTP
-        if otp_input != reg['otp']:
+        expected_otp = reg.get('otp')
+        logger.info(f"Verifying OTP for {email}: Received='{otp_input}', Expected='{expected_otp[:2]}****'")
+
+        if otp_input != expected_otp:
+            logger.warning(f"OTP Mismatch for {email}: Input='{otp_input}', Expected='{expected_otp}'")
             return render(request, self.template_name, {
                 'email': email,
                 'error': f'Mã OTP không đúng. Vui lòng thử lại.'
@@ -200,7 +259,7 @@ class VerifyRegisterOTPView(View):
         try:
             from django.db import transaction, IntegrityError
             with transaction.atomic():
-                free_days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '3'))
+                free_days = int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '1'))
                 user = CustomUser(
                     username=reg['username'],
                     email=reg['email'],
@@ -252,6 +311,7 @@ class VerifyRegisterOTPView(View):
             return redirect('dashboard')
 
         except Exception as e:
+            logger.error(f"Error creating user in OTP verification: {e}")
             return render(request, self.template_name, {
                 'email': email,
                 'error': f'Có lỗi xảy ra khi tạo tài khoản: {str(e)}'
@@ -303,6 +363,11 @@ class ProfileUpdateView(LoginRequiredMixin, View):
 
         # Check for password update
         if password:
+            old_password = request.POST.get('old_password')
+            if not user.check_password(old_password):
+                messages.error(request, 'Mật khẩu cũ không chính xác.')
+                return render(request, 'profile_update.html')
+                
             if password != confirm_password:
                 messages.error(request, 'Mật khẩu mới không khớp.')
                 return render(request, 'profile_update.html')
@@ -417,34 +482,94 @@ class OTPDownloadView(View):
         return render(request, 'otp_download.html')
 
     def post(self, request):
-        otp_code = request.POST.get('otp')
-        otp = OTPCode.objects.filter(code=otp_code, is_used=False, expires_at__gt=timezone.now()).first()
-        if otp and otp.user and hasattr(otp.user, 'vpn_client'):
+        otp_input = request.POST.get('otp', '').strip()
+        if not otp_input:
+            messages.error(request, "Vui lòng nhập mã OTP.")
+            return redirect('otp_download')
+
+        # Use iexact for case-insensitive matching if the code is just alphanumeric
+        otp = OTPCode.objects.filter(code__iexact=otp_input, is_used=False).first()
+        
+        if not otp:
+            messages.error(request, "Mã OTP không hợp lệ.")
+            return redirect('otp_download')
+            
+        if not otp.is_valid():
+             messages.error(request, "Mã OTP này đã hết hạn.")
+             return redirect('otp_download')
+
+        if otp.user and hasattr(otp.user, 'vpn_client'):
             client = otp.user.vpn_client
             file_path = settings.VPN_SETTINGS['OVPN_OUT_DIR'] / f"{client.name}.ovpn"
+            
             if file_path.exists():
                 otp.is_used = True
                 otp.save()
                 return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=f"{client.name}.ovpn")
-        messages.error(request, "Mã OTP không hợp lệ hoặc đã hết hạn.")
+            else:
+                logger.error(f"OTP valid but OVPN file NOT found for {client.name} at {file_path}")
+                messages.error(request, "Lỗi hệ thống: Không tìm thấy tệp cấu hình trên máy chủ. Vui lòng liên hệ Admin.")
+        else:
+            messages.error(request, "Mã OTP không liên kết với tài khoản VPN hợp lệ.")
+            
         return redirect('otp_download')
 
 class InstallerView(View):
     def get(self, request):
         installer_dir = settings.BASE_DIR / 'static' / 'openvpn_installer'
         installers = []
+        
+        # 1. Try to get specific settings first
+        win_name = VPNService.get_vpn_setting('INSTALLER_WIN_NAME')
+        mac_name = VPNService.get_vpn_setting('INSTALLER_MAC_NAME')
+        linux_name = VPNService.get_vpn_setting('INSTALLER_LINUX_NAME')
+        
+        # 2. Helper to add installer info
+        def add_installer(filename, label_preset=None):
+            file_path = installer_dir / filename
+            if not file_path.exists() or not file_path.is_file():
+                return False
+                
+            label = label_preset
+            if not label:
+                f_low = filename.lower()
+                if any(x in f_low for x in ["amd64", "win", "x64", ".msi", ".exe"]):
+                    label = "Windows (x64)"
+                elif any(x in f_low for x in ["macos", "dmg", ".pkg", "apple"]):
+                    label = "macOS"
+                else:
+                    label = filename
+                
+            icon = "fa-windows" if "win" in label.lower() else "fa-apple" if "macos" in label.lower() else "fa-download"
+            
+            # Avoid duplicate files
+            if any(i['name'] == filename for i in installers):
+                return True
+
+            installers.append({
+                'name': filename,
+                'label': label,
+                'icon': icon,
+                'url': settings.STATIC_URL + 'openvpn_installer/' + filename,
+                'size': f"{os.path.getsize(file_path) / (1024*1024):.2f} MB"
+            })
+            return True
+
+        if win_name:
+            add_installer(win_name, "Windows (x64)")
+        if mac_name:
+            add_installer(mac_name, "macOS")
+        if linux_name:
+            add_installer(linux_name, "Linux")
+
+        # 3. Fallback: also scan the directory to find any other files not explicitly set,
+        # but only if not already added via settings
         if installer_dir.exists():
             for f in os.listdir(installer_dir):
                 if os.path.isfile(installer_dir / f):
-                    label = "Windows (x64)" if "amd64" in f.lower() or "win" in f.lower() else "macOS" if "macos" in f.lower() or "dmg" in f.lower() else f
-                    icon = "fa-windows" if "win" in label.lower() else "fa-apple" if "macos" in label.lower() else "fa-download"
-                    installers.append({
-                        'name': f,
-                        'label': label,
-                        'icon': icon,
-                        'url': settings.STATIC_URL + 'openvpn_installer/' + f,
-                        'size': f"{os.path.getsize(installer_dir / f) / (1024*1024):.2f} MB"
-                    })
+                    # add_installer contains a duplicate check
+                    add_installer(f)
+                    
         return render(request, 'installer_download.html', {'installers': installers})
 
 class StaffRequiredMixin(UserPassesTestMixin):
@@ -455,10 +580,46 @@ class AdminGenerateOTPView(LoginRequiredMixin, StaffRequiredMixin, View):
     def get(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk)
         length = int(VPNService.get_vpn_setting('OTP_CODE_LENGTH', '8'))
-        code = ''.join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(length))
+        
+        # Ensure unique code generation
+        max_tries = 10
+        code = ""
+        while max_tries > 0:
+            code = ''.join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(length))
+            if not OTPCode.objects.filter(code=code).exists():
+                break
+            max_tries -= 1
+            
         OTPCode.objects.create(user=user, code=code)
-        messages.success(request, f"Mã OTP cho {user.username}: {code}")
+        
+        # Use a very prominent message for the admin
+        messages.success(request, f"🚀 OTP THÀNH CÔNG CHO {user.username.upper()}: {code}")
+        
         return redirect('admin:vpn_panel_customuser_changelist')
+
+class AdminGenerateOTPAPIView(LoginRequiredMixin, StaffRequiredMixin, View):
+    """API endpoint to generate OTP via AJAX for administrative use."""
+    def get(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        length = int(VPNService.get_vpn_setting('OTP_CODE_LENGTH', '8'))
+        
+        # Ensure unique code generation
+        max_tries = 10
+        code = ""
+        while max_tries > 0:
+            code = ''.join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(length))
+            if not OTPCode.objects.filter(code=code).exists():
+                break
+            max_tries -= 1
+            
+        OTPCode.objects.create(user=user, code=code)
+        
+        return JsonResponse({
+            'success': True,
+            'code': code,
+            'username': user.username
+        })
+
 
 class RestartServiceView(LoginRequiredMixin, StaffRequiredMixin, View):
     def post(self, request):
@@ -610,15 +771,35 @@ class PasswordResetRequestView(View):
             expires_at = timezone.now() + timedelta(hours=1)
             OTPCode.objects.create(user=user, code=code, expires_at=expires_at)
             
-            from django.core.mail import send_mail
             subject = _("Mã xác minh đổi mật khẩu")
-            message = _("Mã xác minh của bạn là: %(code)s. Mã có hiệu lực trong 1 giờ.") % {"code": code}
+            site_name = VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')
+            admin_email = VPNService.get_vpn_setting('ADMIN_EMAIL', settings.DEFAULT_FROM_EMAIL)
+            admin_phone = VPNService.get_vpn_setting('ADMIN_PHONE', 'N/A')
+            
+            message_body = f"Chúng tôi đã nhận được yêu cầu đổi mật khẩu cho tài khoản {user.username}. Mã xác minh của bạn là:\n\n{code}\n\nMã có hiệu lực trong 1 giờ."
+            
+            html_content = render_to_string('emails/notification_email.html', {
+                'subject': subject,
+                'user_name': user.full_name or user.username,
+                'message_body': message_body,
+                'site_name': site_name,
+                'support_email': admin_email,
+                'support_phone': admin_phone,
+            })
+            
             try:
-                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+                send_mail(
+                    subject,
+                    f"Mã xác minh của bạn là: {code}",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    html_message=html_content
+                )
                 request.session['reset_user_id'] = user.id
                 messages.success(request, "Mã xác minh đã được gửi đến email của bạn.")
                 return redirect('password_reset_verify')
             except Exception as e:
+                logger.error(f"Failed to send password reset email to {user.email}: {e}")
                 messages.error(request, f"Lỗi gửi mail: {str(e)}")
         else:
             messages.error(request, "Không tìm thấy tài khoản hoặc tài khoản chưa đăng ký email.")
@@ -735,3 +916,114 @@ class AdminTestWebPushView(LoginRequiredMixin, StaffRequiredMixin, View):
         except Exception as e:
             logger.error(f"Failed to send admin test webpush: {str(e)}")
             return HttpResponse(f"Error: {str(e)}", status=500)
+
+class PublicUserListView(View):
+    template_name = 'public_user_list.html'
+    
+    def get(self, request):
+        users = CustomUser.objects.exclude(is_superuser=True).order_by('expiry_date')
+        
+        # Simple search functionality
+        search_query = request.GET.get('q', '').strip()
+        if search_query:
+            users = users.filter(
+                Q(username__icontains=search_query) | 
+                Q(email__icontains=search_query) |
+                Q(full_name__icontains=search_query)
+            )
+            
+        return render(request, self.template_name, {
+            'users': users,
+            'search_query': search_query,
+            'site_name': VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')
+        })
+
+class PublicUserDetailView(View):
+    template_name = 'public_user_detail.html'
+    
+    def get(self, request, username):
+        user = get_object_or_404(CustomUser, username=username)
+        if user.is_superuser:
+            return HttpResponse("Unauthorized", status=403)
+            
+        # Get Bank Settings for Dynamic VietQR
+        bank_id = Setting.objects.filter(key='BANK_ID').first()
+        bank_acc = Setting.objects.filter(key='BANK_ACCOUNT').first()
+        bank_name = Setting.objects.filter(key='BANK_ACCOUNT_NAME').first()
+        amount = Setting.objects.filter(key='UPGRADE_FEE').first()
+        
+        # DISABLING DYNAMIC QR TEMPORARILY
+        # if bank_id and bank_acc:
+        #     # Generate Dynamic VietQR using VietQR.io API
+        #     # https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.png?amount=<AMOUNT>&addInfo=<MEMO>&accountName=<NAME>
+        #     memo = f"{user.username}"
+        #     qr_code = f"https://img.vietqr.io/image/{bank_id.value}-{bank_acc.value}-compact2.png?amount={amount.value if amount else '0'}&addInfo={memo}&accountName={bank_name.value if bank_name else ''}"
+        # else:
+        #     # Fallback to static QR
+        #     qr_setting = Setting.objects.filter(key='PORTAL_QR_CODE').first()
+        #     qr_path = qr_setting.value if (qr_setting and qr_setting.value) else VPNService.get_vpn_setting('PORTAL_QR_FALLBACK', "/static/images/qr.png")
+        #     qr_code = get_image_base64(qr_path)
+
+        # Always fallback to static QR
+        qr_setting = Setting.objects.filter(key='PORTAL_QR_CODE').first()
+        qr_path = qr_setting.value if (qr_setting and qr_setting.value) else VPNService.get_vpn_setting('PORTAL_QR_FALLBACK', "/static/images/qr.png")
+        qr_code = get_image_base64(qr_path)
+        
+        return render(request, self.template_name, {
+            'user_profile': user,
+            'remaining_days': user.remaining_days,
+            'qr_code': qr_code,
+            'status_text': user.status_text,
+            'site_name': VPNService.get_vpn_setting('SITE_NAME', 'OpenVPN Manager')
+        })
+
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PaymentWebhookView(View):
+    """
+    Webhook to receive payment confirmations from services like SePay or Casso.
+    Example SePay JSON: {"content": "user123", "transferAmount": 50000, ...}
+    """
+    def post(self, request):
+        return HttpResponse("Temporarily disabled", status=200)
+        
+        # TEMPORARILY DISABLED
+        # try:
+        #     data = json.loads(request.body)
+        #     # Support SePay format as example
+        #     content = data.get('content', '') # Transfer memo/content
+        #     amount = float(data.get('transferAmount', 0))
+        #     
+        #     # Find user from memo (case-insensitive)
+        #     # We assume memo contains the username
+        #     user = CustomUser.objects.filter(username__iexact=content.strip()).first()
+        #     
+        #     if user:
+        #         # Extend user duration
+        #         # Logic: Find out how many days to add based on amount (e.g. 50k = 30 days)
+        #         # For now, let's just add 30 days if any valid amount is received
+        #         days_to_add = int(VPNService.get_vpn_setting('RENEW_DAYS_DEFAULT', '30'))
+        #         
+        #         # If they are currently expired, move to today
+        #         if not user.purchase_date or user.expiry_date < timezone.now().date():
+        #             user.purchase_date = timezone.now().date()
+        #             user.duration_days = days_to_add
+        #         else:
+        #             user.duration_days += days_to_add
+        #         
+        #         user.status = 'ACTIVE'
+        #         user.is_vpn_enabled = True
+        #         user.save()
+        #         
+        #         logger.info(f"Payment Webhook: Successfully extended {user.username} for {days_to_add} days. Amount: {amount}")
+        #         return HttpResponse("OK", status=200)
+        #     else:
+        #         logger.warning(f"Payment Webhook: User not found for memo: {content}")
+        #         return HttpResponse("User not found", status=404)
+        #         
+        # except Exception as e:
+        #     logger.error(f"Payment Webhook Error: {str(e)}")
+        #     return HttpResponse("Error", status=500)

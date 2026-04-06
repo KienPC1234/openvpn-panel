@@ -8,7 +8,7 @@ urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url='/static/favicon/favicon.ico', permanent=True)),
     path('site.webmanifest', RedirectView.as_view(url='/static/favicon/site.webmanifest', permanent=True)),
     path('sw.js', TemplateView.as_view(template_name="sw.js", content_type='application/javascript'), name='sw_js'),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('i18n/', include('django.conf.urls.i18n')),
     path('', include('vpn_panel.urls')),

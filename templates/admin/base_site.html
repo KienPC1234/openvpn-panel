@@ -1,12 +1,20 @@
-{% extends "unfold/layouts/base.html" %}
-{% load static %}
+{% extends "admin/base.html" %}
+{% load i18n static unfold %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
 
 {% block extrahead %}
     {{ block.super }}
-    <!-- Custom Favicon & PWA for Admin Panel -->
     <link rel="icon" type="image/png" href="{% static 'favicon/favicon-96x96.png' %}" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="{% static 'favicon/favicon.svg' %}" />
     <link rel="shortcut icon" href="{% static 'favicon/favicon.ico' %}" />
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'favicon/apple-touch-icon.png' %}" />
     <link rel="manifest" href="{% static 'favicon/site.webmanifest' %}" />
+    <script src="{% static 'js/admin_toasts.js' %}"></script>
 {% endblock %}

@@ -22,5 +22,8 @@ def vpn_settings(request):
         'support_text': VPNService.get_vpn_setting('SUPPORT_BUTTON_TEXT', 'Zalo Support'),
         'support_link': VPNService.get_vpn_setting('SUPPORT_LINK', '#'),
         'mess_link': VPNService.get_vpn_setting('MESS_LINK', '#'),
+        'grace_days': int(VPNService.get_vpn_setting('GRACE_PERIOD_DAYS', '0')),
+        'unlock_free_days': int(VPNService.get_vpn_setting('UNLOCK_FREE_DAYS', '1')),
+        'recaptcha_site_key': getattr(settings, 'RECAPTCHA_SITE_KEY', ''),
         'footer_links': footer_links,
     }

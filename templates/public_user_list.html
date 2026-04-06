@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "Danh sách người dùng" %} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-10">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-white mb-2">
+                {% trans "Danh sách thành viên" %}
+            </h1>
+            <p class="text-slate-400 text-sm font-medium">
+                {% trans "Theo dõi thời hạn và trạng thái của tất cả người dùng hệ thống." %}
+            </p>
+        </div>
+        
+        <!-- Search Bar -->
+        <form method="get" class="relative group w-full md:w-96">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fas fa-search text-slate-500 group-focus-within:text-blue-500 transition-colors"></i>
+            </div>
+            <input type="text" name="q" value="{{ search_query|default:'' }}" 
+                   class="block w-full pl-11 pr-4 py-3.5 bg-slate-900/50 border border-white/10 rounded-2xl text-sm font-medium text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                   placeholder="{% trans 'Tìm theo username, tên hoặc email...' %}">
+            {% if search_query %}
+            <a href="{% url 'public_user_list' %}" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors">
+                <i class="fas fa-times-circle"></i>
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Alert / Important Notice -->
+    <div class="flex items-center gap-6 p-6 rounded-3xl bg-amber-500/10 border border-amber-500/20 shadow-2xl shadow-amber-900/5 transition-all hover:bg-amber-500/[0.15] hover:border-amber-500/30">
+        <div class="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-500 shrink-0 shadow-inner">
+            <i class="fas fa-exclamation-triangle text-xl"></i>
+        </div>
+        <div class="space-y-1">
+            <p class="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">{% trans "Lưu ý quan trọng" %}</p>
+            <p class="text-sm text-slate-300 font-medium leading-relaxed">
+                {% trans "Hệ thống sẽ" %} <span class="text-amber-400 font-black italic">{% trans "TỰ ĐỘNG KHÓA" %}</span> {% trans "tài khoản nếu thời gian quá hạn vượt quá" %} 
+                <span class="inline-flex items-center px-3 py-1 rounded-lg bg-amber-500 text-slate-950 text-xs font-black mx-1">3 {% trans "NGÀY" %}</span>. 
+                {% trans "Hãy gia hạn sớm để duy trì kết nối." %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="clean-card overflow-hidden border-white/5">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                        <th class="px-8 py-5">{% trans "Người dùng" %}</th>
+                        <th class="px-8 py-5">{% trans "Email" %}</th>
+                        <th class="px-8 py-5">{% trans "Ngày hết hạn" %}</th>
+                        <th class="px-8 py-5 text-center">{% trans "Trạng thái" %}</th>
+                        <th class="px-8 py-5 text-right">{% trans "Số ngày còn lại" %}</th>
+                        <th class="px-8 py-5 text-right">{% trans "Hành động" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for u in users %}
+                    <tr class="group hover:bg-white/[0.02] transition-colors">
+                        <td class="px-8 py-5">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 flex items-center justify-center text-slate-400 font-bold group-hover:border-blue-500/50 group-hover:text-blue-400 transition-all">
+                                    {{ u.username|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <a href="{% url 'public_user_detail' u.username %}" class="text-sm font-bold text-white hover:text-blue-400 transition-colors">{{ u.full_name|default:u.username }}</a>
+                                    <div class="text-[10px] text-slate-500 font-medium opacity-60">@{{ u.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-8 py-5">
+                            {% if u.email %}
+                            <div class="text-xs font-medium text-slate-300">{{ u.email }}</div>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500 uppercase tracking-wider">
+                                {% trans "Không có email" %}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-8 py-5">
+                            <div class="text-xs font-bold text-slate-200">
+                                {{ u.expiry_date|date:"d/m/Y"|default:_("Vĩnh viễn") }}
+                            </div>
+                        </td>
+                        <td class="px-8 py-5 text-center">
+                            {% if u.remaining_days > 0 %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="w-1 h-1 rounded-full bg-emerald-500"></span>
+                                {% trans "Hoạt động" %}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                <span class="w-1 h-1 rounded-full bg-rose-500 animate-pulse"></span>
+                                {% trans "Hết hạn" %}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <div class="text-lg font-black {% if u.remaining_days > 5 %}text-white{% elif u.remaining_days > 0 %}text-amber-400{% else %}text-rose-500{% endif %}">
+                                {% if u.remaining_days > 900000 %}
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{% trans "Vĩnh viễn" %}</span>
+                                {% elif u.remaining_days >= 0 %}
+                                {{ u.remaining_days }}
+                                <span class="text-[10px] font-bold text-slate-500 uppercase ml-1">d</span>
+                                {% else %}
+                                <span class="text-[10px] font-black bg-rose-500/10 text-rose-500 px-2 py-1 rounded-lg uppercase tracking-tight mr-1">{% trans "Quá hạn" %}</span>
+                                {{ u.remaining_days|stringformat:"i"|slice:"1:" }}
+                                <span class="text-[10px] font-bold text-slate-500 uppercase ml-1">d</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <a href="{% url 'public_user_detail' u.username %}" 
+                               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                                <i class="fas fa-qrcode text-xs"></i>
+                                {% trans "Xem QR chuyển khoản" %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <div class="flex flex-col items-center gap-4">
+                                <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-slate-700">
+                                    <i class="fas fa-users-slash text-2xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 font-bold">{% trans "Không tìm thấy người dùng nào" %}</p>
+                                    <p class="text-[10px] text-slate-600 uppercase tracking-widest mt-1">{% trans "Thử từ khóa khác hoặc liên hệ Admin" %}</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quick Stats Overlay (Optional) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div class="glass-card p-6 rounded-3xl border-blue-500/10">
+            <p class="text-[10px] font-black text-blue-500/60 uppercase tracking-[0.2em] mb-1">{% trans "Tổng số" %}</p>
+            <p class="text-2xl font-black text-white">{{ users.count }}</p>
+        </div>
+        <div class="glass-card p-6 rounded-3xl border-emerald-500/10">
+            <p class="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.2em] mb-1">{% trans "Thời gian trung bình" %}</p>
+            <p class="text-2xl font-black text-white">~30 <span class="text-xs text-slate-500">{% trans "Ngày" %}</span></p>
+        </div>
+        <div class="glass-card p-6 rounded-3xl border-indigo-500/10">
+            <p class="text-[10px] font-black text-indigo-500/60 uppercase tracking-[0.2em] mb-1">{% trans "Hỗ trợ" %}</p>
+            <p class="text-2xl font-black text-white">24/7</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

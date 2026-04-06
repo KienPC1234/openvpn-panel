@@ -22,6 +22,7 @@
 
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     {% block extra_head %}{% endblock %}
     <style>
         :root {
@@ -137,6 +138,7 @@
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center gap-8">
+                    <a href="{% url 'public_user_list' %}" class="nav-link text-sm font-semibold text-slate-400 hover:text-white">{% trans "Gia hạn" %}</a>
                     <a href="{% url 'installer_download' %}" class="nav-link text-sm font-semibold text-slate-400 hover:text-white">{% trans "Tải Installer" %}</a>
                     <a href="{% url 'otp_download' %}" class="nav-link text-sm font-semibold text-slate-400 hover:text-white">{% trans "Nhập OTP" %}</a>
                     
@@ -255,6 +257,7 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden glass-nav border-t border-white/5 animate-slide-in">
             <div class="px-4 pt-2 pb-6 space-y-2">
+                <a href="{% url 'public_user_list' %}" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5">{% trans "Gia hạn" %}</a>
                 <a href="{% url 'installer_download' %}" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5">{% trans "Tải Installer" %}</a>
                 <a href="{% url 'otp_download' %}" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5">{% trans "Nhập OTP" %}</a>
                 {% if not user.is_authenticated %}
@@ -266,6 +269,31 @@
             </div>
         </div>
     </nav>
+    {% endif %}
+
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            {% for message in messages %}
+            Toast.fire({
+                icon: '{% if message.tags == "error" %}error{% elif message.tags == "warning" %}warning{% else %}success{% endif %}',
+                title: '{{ message|escapejs }}'
+            });
+            {% endfor %}
+        });
+    </script>
     {% endif %}
 
     <main class="{% if not full_width %}max-w-7xl mx-auto px-4 sm:px-6 lg:px-8{% endif %} flex-grow {% if center_content %}flex items-center justify-center{% else %}py-10{% endif %} animate-fade-in">

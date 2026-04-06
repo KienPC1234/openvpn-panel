@@ -159,6 +159,55 @@
         </div>
     </div>
 
+    <!-- Section Title: Firewall Management -->
+    <div class="flex items-center gap-2 mb-6 mt-10">
+        <span class="material-symbols-outlined opacity-40 text-lg">admin_panel_settings</span>
+        <h2 class="text-sm font-bold uppercase tracking-[0.2em] opacity-50">Quản trị Tường lửa</h2>
+    </div>
+
+    <!-- Firewall Actions Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <!-- Card: Master Firewall Sync -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-green-500/10 text-green-600 dark:bg-green-500/20">
+                    <span class="material-symbols-outlined">security</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Cân bằng Tường lửa</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Đồng bộ chuẩn xác Database & Firewall. Tự động dọn dẹp các quy tắc lỗi hoặc dư thừa.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="reapply_all_locks">
+                <button type="submit" class="w-full py-3 bg-primary-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-primary-700 active:scale-[0.98] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">restart_alt</span> Thực thi Toàn diện
+                </button>
+            </form>
+        </div>
+
+        <!-- Card: Dump Firewall -->
+        <div class="group relative border border-gray-100/10 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-500/30">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="p-3 rounded-xl bg-orange-500/10 text-orange-600 dark:bg-orange-500/20">
+                    <span class="material-symbols-outlined">data_object</span>
+                </div>
+                <div>
+                    <h3 class="font-bold group-hover:text-primary-600 transition-colors">Xuất Dữ liệu Firewall</h3>
+                    <p class="text-xs opacity-60 mt-1 leading-relaxed">Trích xuất toàn bộ bảng Quy tắc (Iptables/v6) để phục vụ việc kiểm tra và gỡ lỗi.</p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="task_type" value="dump_firewall">
+                <button type="submit" class="w-full py-3 bg-slate-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-slate-700 active:scale-[0.98] shadow-lg shadow-slate-600/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">download</span> Xuất LOG
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Logs Section Title -->
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2">

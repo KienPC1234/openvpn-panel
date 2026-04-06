@@ -13,13 +13,6 @@
             <p class="text-gray-400 text-sm">{% trans 'Nhập mã OTP được cung cấp bởi Admin để tải file cấu hình VPN của bạn.' %}</p>
         </div>
 
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-6 p-4 rounded-xl text-sm {% if message.tags == 'error' %}bg-red-500/10 text-red-500 border border-red-500/20{% else %}bg-green-500/10 text-green-500 border border-green-500/20{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
 
         <form method="POST" class="space-y-6">
             {% csrf_token %}

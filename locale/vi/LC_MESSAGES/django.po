@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-30 17:43+0700\n"
+"POT-Creation-Date: 2026-04-06 08:13+0700\n"
 "Language: vi\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -46,56 +46,60 @@ msgstr "Chỉ số Thời gian thực"
 msgid "Danh mục quản lý nhanh"
 msgstr ""
 
-#: templates/base.html:140 templates/base.html:258
+#: templates/base.html:140 templates/base.html:259
+msgid "Gia hạn"
+msgstr ""
+
+#: templates/base.html:141 templates/base.html:260
 msgid "Tải Installer"
 msgstr "Cài đặt"
 
-#: templates/base.html:141 templates/base.html:259
+#: templates/base.html:142 templates/base.html:261
 msgid "Nhập OTP"
 msgstr ""
 
-#: templates/base.html:167 templates/profile_update.html:37
+#: templates/base.html:168 templates/profile_update.html:37
 msgid "Thành viên"
 msgstr ""
 
-#: templates/base.html:175
+#: templates/base.html:176
 msgid "Tài khoản cá nhân"
 msgstr ""
 
-#: templates/base.html:185 templates/dashboard.html:4
+#: templates/base.html:186 templates/dashboard.html:4
 #: vpn_project/settings.py:85
 msgid "Dashboard"
 msgstr "Bảng điều khiển"
 
-#: templates/base.html:186
+#: templates/base.html:187
 msgid "Trang chủ quản lý"
 msgstr ""
 
-#: templates/base.html:194
+#: templates/base.html:195
 msgid "Hồ sơ"
 msgstr ""
 
-#: templates/base.html:195
+#: templates/base.html:196
 msgid "Đổi mật khẩu, Email"
 msgstr ""
 
-#: templates/base.html:205
+#: templates/base.html:206
 msgid "Quản lý User"
 msgstr ""
 
-#: templates/base.html:214
+#: templates/base.html:215
 msgid "Hệ thống"
 msgstr ""
 
-#: templates/base.html:227
+#: templates/base.html:228
 msgid "Đăng xuất"
 msgstr ""
 
-#: templates/base.html:236 templates/base.html:262 templates/register.html:3
+#: templates/base.html:237 templates/base.html:264 templates/register.html:3
 msgid "Đăng ký"
 msgstr ""
 
-#: templates/base.html:240 templates/base.html:263 templates/login.html:97
+#: templates/base.html:241 templates/base.html:265 templates/login.html:105
 msgid "ĐĂNG NHẬP"
 msgstr ""
 
@@ -165,7 +169,8 @@ msgstr ""
 msgid "Thời gian còn lại"
 msgstr ""
 
-#: templates/dashboard.html:170
+#: templates/dashboard.html:170 templates/public_user_detail.html:58
+#: templates/public_user_list.html:155
 msgid "Ngày"
 msgstr ""
 
@@ -174,18 +179,22 @@ msgid "Thông tin gói"
 msgstr ""
 
 #: templates/dashboard.html:185 templates/profile_update.html:40
+#: templates/public_user_detail.html:46 templates/public_user_list.html:59
 msgid "Trạng thái"
 msgstr ""
 
 #: templates/dashboard.html:186 templates/profile_update.html:41
+#: templates/public_user_detail.html:48 templates/public_user_list.html:96
 msgid "Hoạt động"
 msgstr ""
 
-#: templates/dashboard.html:189 vpn_panel/models.py:18
+#: templates/dashboard.html:189 templates/public_user_detail.html:50
+#: templates/public_user_list.html:101 vpn_panel/models.py:18
 msgid "Hết hạn"
 msgstr ""
 
 #: templates/dashboard.html:190 templates/dashboard.html:197
+#: templates/public_user_list.html:89 templates/public_user_list.html:108
 msgid "Vĩnh viễn"
 msgstr ""
 
@@ -342,7 +351,7 @@ msgstr ""
 msgid "Thử kết nối lại"
 msgstr ""
 
-#: templates/login.html:3 templates/register.html:153
+#: templates/login.html:3 templates/register.html:167
 msgid "Đăng nhập"
 msgstr ""
 
@@ -401,19 +410,19 @@ msgstr ""
 msgid "Mật khẩu"
 msgstr ""
 
-#: templates/login.html:85
+#: templates/login.html:87
 msgid "Tên đăng nhập hoặc mật khẩu không đúng."
 msgstr ""
 
-#: templates/login.html:102 templates/password_reset.html:12
+#: templates/login.html:110 templates/password_reset.html:12
 msgid "Quên mật khẩu?"
-msgstr ""
+msgstr "Quên mật khẩu?"
 
-#: templates/login.html:108
+#: templates/login.html:116
 msgid "Chưa có tài khoản?"
 msgstr ""
 
-#: templates/login.html:109
+#: templates/login.html:117
 msgid "Đăng ký ngay"
 msgstr ""
 
@@ -497,7 +506,7 @@ msgstr ""
 msgid "Mã xác minh (OTP)"
 msgstr ""
 
-#: templates/password_reset_verify.html:24 templates/profile_update.html:127
+#: templates/password_reset_verify.html:24 templates/profile_update.html:138
 msgid "Mật khẩu mới"
 msgstr ""
 
@@ -513,7 +522,7 @@ msgstr ""
 msgid "Gửi lại mã"
 msgstr ""
 
-#: templates/profile_update.html:3 templates/profile_update.html:160
+#: templates/profile_update.html:3 templates/profile_update.html:172
 msgid "Cập nhật hồ sơ"
 msgstr ""
 
@@ -563,16 +572,167 @@ msgstr ""
 msgid "Thay đổi mật khẩu"
 msgstr ""
 
-#: templates/profile_update.html:137
+#: templates/profile_update.html:127
+#, fuzzy
+#| msgid "Quên mật khẩu?"
+msgid "Mật khẩu cũ"
+msgstr "Quên mật khẩu?"
+
+#: templates/profile_update.html:148
 msgid "Xác nhận mật khẩu mới"
 msgstr ""
 
-#: templates/profile_update.html:152
+#: templates/profile_update.html:164
 msgid "Để trống nếu bạn không muốn thay đổi mật khẩu hiện tại."
 msgstr ""
 
-#: templates/profile_update.html:164
+#: templates/profile_update.html:176
 msgid "Hủy bỏ"
+msgstr ""
+
+#: templates/public_user_detail.html:4 templates/public_user_detail.html:75
+msgid "QR Chuyển khoản"
+msgstr ""
+
+#: templates/public_user_detail.html:13
+#, fuzzy
+#| msgid "Quay lại Dashboard"
+msgid "Quay lại danh sách"
+msgstr "Bảng điều khiển"
+
+#: templates/public_user_detail.html:30 vpn_panel/models.py:17
+msgid "Đang hoạt động"
+msgstr ""
+
+#: templates/public_user_detail.html:34
+msgid "Đã hết hạn"
+msgstr ""
+
+#: templates/public_user_detail.html:41
+msgid "Thành viên OpenVPN"
+msgstr ""
+
+#: templates/public_user_detail.html:55
+msgid "Còn lại"
+msgstr ""
+
+#: templates/public_user_detail.html:55 templates/public_user_list.html:113
+msgid "Quá hạn"
+msgstr ""
+
+#: templates/public_user_detail.html:66
+#, python-format
+msgid "Tài khoản sẽ bị Khóa khi quá hạn %(lock_in)s ngày (Nếu không gia hạn)."
+msgstr ""
+
+#: templates/public_user_detail.html:93
+msgid "Hướng dẫn gia hạn"
+msgstr ""
+
+#: templates/public_user_detail.html:98
+msgid ""
+"Chụp màn hình mã QR ở trên hoặc quét trực tiếp bằng ứng dụng Ngân hàng/Ví "
+"điện tử."
+msgstr ""
+
+#: templates/public_user_detail.html:104
+msgid "Nhập nội dung chuyển khoản là tên đăng nhập"
+msgstr ""
+
+#: templates/public_user_detail.html:110
+msgid "Sau khi chuyển khoản, hệ thống sẽ tự động gia hạn trong giây lát."
+msgstr ""
+
+#: templates/public_user_detail.html:126
+msgid "Hỗ trợ 24/7"
+msgstr ""
+
+#: templates/public_user_list.html:4
+msgid "Danh sách người dùng"
+msgstr ""
+
+#: templates/public_user_list.html:12
+msgid "Danh sách thành viên"
+msgstr ""
+
+#: templates/public_user_list.html:15
+msgid "Theo dõi thời hạn và trạng thái của tất cả người dùng hệ thống."
+msgstr ""
+
+#: templates/public_user_list.html:26
+msgid "Tìm theo username, tên hoặc email..."
+msgstr ""
+
+#: templates/public_user_list.html:41
+msgid "Lưu ý quan trọng"
+msgstr ""
+
+#: templates/public_user_list.html:43
+msgid "Hệ thống sẽ"
+msgstr ""
+
+#: templates/public_user_list.html:43
+msgid "TỰ ĐỘNG KHÓA"
+msgstr ""
+
+#: templates/public_user_list.html:43
+msgid "tài khoản nếu thời gian quá hạn vượt quá"
+msgstr ""
+
+#: templates/public_user_list.html:44
+msgid "NGÀY"
+msgstr ""
+
+#: templates/public_user_list.html:45
+msgid "Hãy gia hạn sớm để duy trì kết nối."
+msgstr ""
+
+#: templates/public_user_list.html:56
+msgid "Người dùng"
+msgstr ""
+
+#: templates/public_user_list.html:57
+msgid "Email"
+msgstr "Chưa có email"
+
+#: templates/public_user_list.html:58
+msgid "Ngày hết hạn"
+msgstr ""
+
+#: templates/public_user_list.html:60
+msgid "Số ngày còn lại"
+msgstr ""
+
+#: templates/public_user_list.html:61
+msgid "Hành động"
+msgstr ""
+
+#: templates/public_user_list.html:83
+msgid "Không có email"
+msgstr ""
+
+#: templates/public_user_list.html:123
+msgid "Xem QR chuyển khoản"
+msgstr ""
+
+#: templates/public_user_list.html:135
+msgid "Không tìm thấy người dùng nào"
+msgstr ""
+
+#: templates/public_user_list.html:136
+msgid "Thử từ khóa khác hoặc liên hệ Admin"
+msgstr ""
+
+#: templates/public_user_list.html:150
+msgid "Tổng số"
+msgstr ""
+
+#: templates/public_user_list.html:154
+msgid "Thời gian trung bình"
+msgstr ""
+
+#: templates/public_user_list.html:158
+msgid "Hỗ trợ"
 msgstr ""
 
 #: templates/register.html:15
@@ -592,9 +752,10 @@ msgid "của bạn."
 msgstr ""
 
 #: templates/register.html:21
+#, python-format
 msgid ""
-"Tạo tài khoản và trải nghiệm VPN cao cấp với 3 ngày dùng thử miễn phí hoàn "
-"toàn."
+"Tạo tài khoản và trải nghiệm VPN cao cấp với %(unlock_free_days)s ngày dùng "
+"thử miễn phí hoàn toàn."
 msgstr ""
 
 #: templates/register.html:27
@@ -614,7 +775,8 @@ msgid "Mã có hiệu lực trong 10 phút"
 msgstr ""
 
 #: templates/register.html:41
-msgid "Nhận 3 ngày DEMO miễn phí"
+#, python-format
+msgid "Nhận %(unlock_free_days)s ngày DEMO miễn phí"
 msgstr ""
 
 #: templates/register.html:42
@@ -626,7 +788,8 @@ msgid "Đăng ký miễn phí · Nhận ngay"
 msgstr ""
 
 #: templates/register.html:58
-msgid "3 ngày DEMO"
+#, python-format
+msgid "%(unlock_free_days)s ngày DEMO"
 msgstr ""
 
 #: templates/register.html:78
@@ -649,23 +812,24 @@ msgstr ""
 msgid "Nhập lại mật khẩu"
 msgstr ""
 
-#: templates/register.html:138
+#: templates/register.html:148
 msgid "Ưu đãi chào mừng"
 msgstr ""
 
-#: templates/register.html:139
+#: templates/register.html:149
 msgid "Xác thực email → nhận ngay"
 msgstr ""
 
-#: templates/register.html:139 templates/verify_register_otp.html:29
-msgid "3 ngày dùng thử MIỄN PHÍ"
+#: templates/register.html:149
+#, python-format
+msgid "%(unlock_free_days)s ngày dùng thử MIỄN PHÍ"
 msgstr ""
 
-#: templates/register.html:145
+#: templates/register.html:159
 msgid "TẠO TÀI KHOẢN"
 msgstr ""
 
-#: templates/register.html:152
+#: templates/register.html:166
 msgid "Đã có tài khoản?"
 msgstr ""
 
@@ -699,6 +863,10 @@ msgstr ""
 msgid "Sau khi xác thực thành công, tài khoản sẽ được kích hoạt ngay với"
 msgstr ""
 
+#: templates/verify_register_otp.html:29
+msgid "1 ngày dùng thử MIỄN PHÍ"
+msgstr ""
+
 #: templates/verify_register_otp.html:47
 msgid "Chúng tôi đã gửi mã 6 chữ số đến"
 msgstr ""
@@ -723,6 +891,10 @@ msgstr ""
 msgid "Đăng ký lại"
 msgstr ""
 
+#: templates/verify_register_otp.html:153
+msgid "Vui lòng nhập đủ 6 chữ số mã OTP."
+msgstr ""
+
 #: vpn_panel/admin.py:65
 msgid "Tổng Doanh Thu"
 msgstr ""
@@ -735,15 +907,15 @@ msgstr ""
 msgid "Người Dùng Online"
 msgstr ""
 
-#: vpn_panel/admin.py:135
+#: vpn_panel/admin.py:137
 msgid "Gói cước & Thanh toán"
 msgstr ""
 
-#: vpn_panel/admin.py:139
+#: vpn_panel/admin.py:141
 msgid "Permissions"
 msgstr "Quyền hạn"
 
-#: vpn_panel/admin.py:628 vpn_panel/admin.py:634
+#: vpn_panel/admin.py:637 vpn_panel/admin.py:643
 msgid "Value"
 msgstr ""
 
@@ -767,49 +939,40 @@ msgstr "Ngày hết hạn"
 msgid "Amount Paid"
 msgstr "Số tiền đã trả"
 
-#: vpn_panel/models.py:17
-msgid "Đang hoạt động"
-msgstr ""
-
 #: vpn_panel/models.py:19
 msgid "Đã hủy"
 msgstr ""
 
 #: vpn_panel/models.py:20
-msgid "Dùng thử (3 ngày)"
+msgid "Dùng thử (1 ngày)"
 msgstr ""
 
-#: vpn_panel/models.py:152
+#: vpn_panel/models.py:166
 msgid "Client Name"
 msgstr "Tên Client"
 
-#: vpn_panel/models.py:153
+#: vpn_panel/models.py:167
 msgid "IP Address"
 msgstr "Địa chỉ IP"
 
-#: vpn_panel/models.py:154
+#: vpn_panel/models.py:168
 msgid "Is Locked"
 msgstr "Đã khóa"
 
-#: vpn_panel/models.py:155
+#: vpn_panel/models.py:169
 msgid "Has OVPN File"
 msgstr ""
 
-#: vpn_panel/models.py:204
+#: vpn_panel/models.py:218
 msgid "Subject"
 msgstr ""
 
-#: vpn_panel/models.py:205
+#: vpn_panel/models.py:219
 msgid "Content (HTML supported)"
 msgstr ""
 
-#: vpn_panel/views.py:614
+#: vpn_panel/views.py:750
 msgid "Mã xác minh đổi mật khẩu"
-msgstr ""
-
-#: vpn_panel/views.py:615
-#, python-format
-msgid "Mã xác minh của bạn là: %(code)s. Mã có hiệu lực trong 1 giờ."
 msgstr ""
 
 #: vpn_project/settings.py:71
@@ -1457,10 +1620,6 @@ msgstr "Tiếng Anh"
 #~| msgid "Confirm Password"
 #~ msgid "Password"
 #~ msgstr "Xác nhận mật khẩu"
-
-#~| msgid "No email"
-#~ msgid "Email"
-#~ msgstr "Chưa có email"
 
 #~| msgid "Invalid data or passwords do not match"
 #~ msgid "Passwords do not match!"

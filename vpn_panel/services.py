@@ -21,6 +21,13 @@ class VPNService:
         except Setting.DoesNotExist:
             return settings.VPN_SETTINGS.get(key, default)
 
+    @staticmethod
+    def set_vpn_setting(key: str, value: str):
+        setting, created = Setting.objects.get_or_create(key=key)
+        setting.value = value
+        setting.save()
+        return setting
+
     @classmethod
     def get_monitored_interfaces(cls) -> List[str]:
         val = cls.get_vpn_setting('MONITORED_INTERFACES', 'eth0,tun0')
@@ -234,54 +241,73 @@ class VPNService:
         return True, "CRL updated"
 
     @classmethod
-    def toggle_lock(cls, client_name: str, ip: str, action: str) -> Tuple[bool, str]:
-        """Sophisticated locking with DNS preservation and strict validation."""
-        if not ip or ip == "0.0.0.0":
+    def toggle_lock(cls, client_name: str, ip_str: str, action: str) -> Tuple[bool, str]:
+        """Atomic locking/unlocking with full state cleanup before application."""
+        if not ip_str or ip_str == "0.0.0.0":
+            logger.warning(f"Aborting {action} for {client_name}: Invalid IP {ip_str}")
             return False, "IP not found"
             
         gw = cls.get_vpn_setting('VPN_GATEWAY', '10.8.0.1')
+        gw_v6 = cls.get_vpn_setting('VPN_GATEWAY_V6', 'fddd:1194:1194:1194::1')
         portal_port = cls.get_vpn_setting('PORTAL_PORT', '4553')
         chain = "FORWARD"
         nat_chain = "PREROUTING"
+        
+        ips = [i.strip() for i in ip_str.split(',')]
+        results = []
+        overall_success = True
 
-        # Check if already locked to avoid redundant work/errors
-        already_locked, _ = cls.run_command(["sudo", "iptables", "-C", chain, "-s", ip, "-j", "DROP"])
+        for ip in ips:
+            if not ip: continue
+            is_ipv6 = ":" in ip
+            ipt = "ip6tables" if is_ipv6 else "iptables"
+            target_gw = gw_v6 if is_ipv6 else gw
+            dest = f"[{target_gw}]:{portal_port}" if is_ipv6 else f"{target_gw}:{portal_port}"
 
-        if action == "lock":
-            if already_locked: return True, "Already locked"
-            
-            steps = [
-                # 1. Allow DNS (UDP/TCP)
-                ["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"],
-                ["sudo", "iptables", "-I", chain, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"],
-                # 2. DNAT HTTP/HTTPS to Portal
-                ["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"],
-                ["sudo", "iptables", "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"],
-                # 3. Block everything else
-                ["sudo", "iptables", "-I", chain, "3", "-s", ip, "-j", "DROP"]
-            ]
-            
-            for cmd in steps:
-                success, err = cls.run_command(cmd)
-                if not success:
-                    return False, f"Rule failed: {' '.join(cmd[1:4])}... Error: {err.strip()}"
-            
-            cls.save_iptables()
-            return True, "Locked"
-        else:
-            # Unlock logic - Removal is more lenient but we still check the primary DROP rule
-            # Remove DNAT
-            cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-            cls.run_command(["sudo", "iptables", "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", f"{gw}:{portal_port}"])
-            # Remove DNS Accepts
-            cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
-            cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
-            
-            # Remove DROP rule (the most important)
-            success, err = cls.run_command(["sudo", "iptables", "-D", chain, "-s", ip, "-j", "DROP"])
-            
-            cls.save_iptables()
-            return True, "Unlocked"
+            # --- CLEANUP PHASE: Remove any existing rules for this IP to prevent duplicates/conflicts ---
+            logger.info(f"Preparing {action} for {client_name} ({ip}): Cleaning stale rules...")
+            # We try to delete until it fails, to ensure all duplicate rules are gone
+            for attempt in range(5): # Maximum 5 duplicate rules removal
+                # Remove DNAT
+                cls.run_command(["sudo", ipt, "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", dest])
+                cls.run_command(["sudo", ipt, "-t", "nat", "-D", nat_chain, "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", dest])
+                # Remove DNS Accepts
+                cls.run_command(["sudo", ipt, "-D", chain, "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
+                cls.run_command(["sudo", ipt, "-D", chain, "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
+                # Remove DROP rule
+                success_del, _ = cls.run_command(["sudo", ipt, "-D", chain, "-s", ip, "-j", "DROP"])
+                if not success_del: break # No more rules found
+
+            if action == "lock":
+                logger.info(f"Applying lock rules for {client_name} ({ip})")
+                steps = [
+                    # 1. Allow DNS (UDP/TCP) - Index 1 and 2
+                    ["sudo", ipt, "-I", chain, "1", "-s", ip, "-p", "udp", "--dport", "53", "-j", "ACCEPT"],
+                    ["sudo", ipt, "-I", chain, "1", "-s", ip, "-p", "tcp", "--dport", "53", "-j", "ACCEPT"],
+                    # 2. DNAT HTTP/HTTPS to Portal
+                    ["sudo", ipt, "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to-destination", dest],
+                    ["sudo", ipt, "-t", "nat", "-I", nat_chain, "1", "-s", ip, "-p", "tcp", "--dport", "443", "-j", "DNAT", "--to-destination", dest],
+                    # 3. Block everything else - Insert at 3 so it's after DNS entries
+                    ["sudo", ipt, "-I", chain, "3", "-s", ip, "-j", "DROP"]
+                ]
+                
+                for cmd in steps:
+                    success, err = cls.run_command(cmd)
+                    if not success:
+                        overall_success = False
+                        msg = f"{ip}: Rule failed: {' '.join(cmd[1:4])}... Error: {err.strip()}"
+                        logger.error(f"Lock failed for {client_name}: {msg}")
+                        results.append(msg)
+                        break
+                else:
+                    logger.info(f"Successfully locked {client_name} ({ip})")
+                    results.append(f"{ip}: Locked")
+            else:
+                logger.info(f"Successfully unlocked {client_name} ({ip})")
+                results.append(f"{ip}: Unlocked")
+
+        cls.save_iptables()
+        return overall_success, "; ".join(results)
 
     @classmethod
     def save_iptables(cls):
@@ -396,13 +422,16 @@ class VPNService:
 
     @classmethod
     def is_user_locked(cls, username: str) -> bool:
-        """Checks if a user's IP is currently DROPPED in iptables FORWARD chain."""
+        """Checks if a user's IP is currently DROPPED in iptables/ip6tables FORWARD chain."""
         from .models import Client
         client = Client.objects.filter(name=username).first()
         if not client or not client.ip_address: return False
         
+        ip = client.ip_address
+        ipt = "ip6tables" if ":" in ip else "iptables"
+        
         # Check if the DROP rule exists for this IP in FORWARD
-        success, _ = cls.run_command(["sudo", "iptables", "-C", "FORWARD", "-s", client.ip_address, "-j", "DROP"])
+        success, _ = cls.run_command(["sudo", ipt, "-C", "FORWARD", "-s", ip, "-j", "DROP"])
         return success
 
     @classmethod
@@ -543,3 +572,27 @@ class VPNService:
             return f"Unknown service: {service}"
             
         return output if success else f"Error fetching logs for {service}: {output}"
+
+    @classmethod
+    def get_available_installers(cls) -> List[Dict]:
+        """Scans the physical installer directory and returns metadata."""
+        installer_dir = settings.BASE_DIR / 'static' / 'openvpn_installer'
+        if not installer_dir.exists():
+            return []
+            
+        import os
+        files = []
+        for f in os.listdir(installer_dir):
+            path = installer_dir / f
+            if path.is_file():
+                files.append({
+                    'name': f,
+                    'size': cls.format_bytes(os.path.getsize(path)),
+                    'uploaded_at': os.path.getmtime(path),
+                    'is_current_win': cls.get_vpn_setting('INSTALLER_WIN_NAME') == f,
+                    'is_current_mac': cls.get_vpn_setting('INSTALLER_MAC_NAME') == f,
+                    'is_current_linux': cls.get_vpn_setting('INSTALLER_LINUX_NAME') == f,
+                })
+        # Sort by mtime descending
+        files.sort(key=lambda x: x['uploaded_at'], reverse=True)
+        return files

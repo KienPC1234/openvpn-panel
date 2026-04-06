@@ -424,11 +424,7 @@ msgstr ""
 
 #: templates/login.html:102 templates/password_reset.html:12
 msgid "Quên mật khẩu?"
-msgstr ""
-"#-#-#-#-#  django.po (PACKAGE VERSION)  #-#-#-#-#\n"
-"Confirm Password\n"
-"#-#-#-#-#  django.po (PACKAGE VERSION)  #-#-#-#-#\n"
-"Forgot Password?"
+msgstr "Forgot Password?"
 
 #: templates/login.html:108
 msgid "Chưa có tài khoản?"

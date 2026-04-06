@@ -165,8 +165,16 @@
 
             <p style="color: #475569;">Bây giờ bạn có thể đăng nhập vào trang quản lý để tải tập tin cấu hình VPN (.ovpn) hoặc quản lý tài khoản của mình.</p>
             
-            <div class="cta-container">
-                <a href="{{ site_url }}" class="btn">🚀 Bắt đầu ngay bây giờ</a>
+            <div style="margin-top: 32px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #4f46e5; border-radius: 12px; padding: 20px; text-align: left;">
+                <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">🔗 Dashboard & Tải Profile (Copy & Paste)</p>
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 14px; color: #4f46e5; word-break: break-all; display: block;">
+                    {{ site_url }}
+                </div>
+                <div style="margin-top: 16px; padding: 10px; background: #fffbeb; border-radius: 8px; border: 1px solid #fde68a;">
+                    <p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 600;">
+                        ⚠️ LƯU Ý: Bạn CẦN kết nối vào VPN trước khi truy cập liên kết trên.
+                    </p>
+                </div>
             </div>
 
             <div class="notice">
@@ -174,10 +182,11 @@
             </div>
         </div>
         <div class="footer">
-            <p>&copy; {% now "Y" %} {{ site_name }} • VPN Panel Modern</p>
-            <p>{{ footer_text|default:"Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi." }}</p>
-            <p style="margin-top: 10px; font-size: 11px; opacity: 0.7;">
-                Bản email này được gửi tự động, vui lòng không phản hồi qua email này.
+            <p>&copy; {% now "Y" %} {{ site_name }} • Hệ thống VPN Chuyên nghiệp</p>
+            <p>Hỗ trợ: {{ support_email }} | Hotline: {{ support_phone }}</p>
+            <p style="margin-top: 15px; font-size: 11px; color: #94a3b8; line-height: 1.4;">
+                Thông tin này được gửi đến bạn dựa trên việc đăng ký dịch vụ tại {{ site_name }}. 
+                Tuyệt đối không chia sẻ thông tin tài khoản cho người khác.
             </p>
         </div>
     </div>

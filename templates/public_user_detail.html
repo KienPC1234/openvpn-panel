@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "QR Chuyển khoản" %} - {{ user_profile.username }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-12 px-6">
+    <!-- Breadcrumb / Back Navigation -->
+    <a href="{% url 'public_user_list' %}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 group">
+        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-all">
+            <i class="fas fa-arrow-left text-xs"></i>
+        </div>
+        <span class="text-xs font-bold uppercase tracking-widest">{% trans "Quay lại danh sách" %}</span>
+    </a>
+
+    <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <!-- User Profile Header Card -->
+        <div class="clean-card p-10 relative overflow-hidden group">
+            <!-- Background Decorative Elements -->
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors"></div>
+            <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors"></div>
+
+            <div class="relative flex flex-col items-center text-center">
+                <!-- Avatar -->
+                <div class="relative mb-6">
+                    <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-3xl font-black shadow-2xl shadow-blue-500/20 transform group-hover:scale-105 transition-transform duration-500">
+                        {{ user_profile.username|slice:":1"|upper }}
+                    </div>
+                    {% if remaining_days > 0 %}
+                    <div class="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-emerald-500 border-4 border-slate-900 flex items-center justify-center text-[10px]" title="{% trans 'Đang hoạt động' %}">
+                        <i class="fas fa-check text-white"></i>
+                    </div>
+                    {% else %}
+                    <div class="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-rose-500 border-4 border-slate-900 flex items-center justify-center text-[10px]" title="{% trans 'Đã hết hạn' %}">
+                        <i class="fas fa-exclamation text-white"></i>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h1 class="text-4xl font-black text-white mb-2">{{ user_profile.username }}</h1>
+                <p class="text-slate-400 text-sm font-medium mb-8">{{ user_profile.full_name|default:_("Thành viên OpenVPN") }}</p>
+
+                <!-- Status Pills -->
+                <div class="flex flex-wrap justify-center gap-3 mb-10">
+                    <div class="px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
+                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{% trans "Trạng thái" %}:</span>
+                        {% if remaining_days > 0 %}
+                        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">{% trans "Hoạt động" %}</span>
+                        {% else %}
+                        <span class="text-xs font-bold text-rose-500 uppercase tracking-wider">{% trans "Hết hạn" %}</span>
+                        {% endif %}
+                    </div>
+                    <div class="px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
+                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            {% if remaining_days >= 0 %}{% trans "Còn lại" %}{% else %}{% trans "Quá hạn" %}{% endif %}:
+                        </span>
+                        <span class="text-xs font-bold {% if remaining_days >= 0 %}text-white{% else %}text-rose-500{% endif %} uppercase tracking-wider">
+                            {% if remaining_days >= 0 %}{{ remaining_days }}{% else %}{{ remaining_days|stringformat:"i"|slice:"1:" }}{% endif %} {% trans "Ngày" %}
+                        </span>
+                    </div>
+                </div>
+
+                {% if remaining_days < 0 %}
+                <div class="mb-10 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold animate-pulse">
+                    <i class="fas fa-clock mr-2"></i>
+                    {% blocktrans with lock_in=grace_days|add:1 %}Tài khoản sẽ bị Khóa khi quá hạn {{ lock_in }} ngày (Nếu không gia hạn).{% endblocktrans %}
+                </div>
+                {% endif %}
+
+                <!-- QR Section -->
+                <div class="w-full max-w-sm mx-auto">
+                    <div class="relative p-3 rounded-[2.5rem] bg-white/5 border border-white/10 shadow-2xl overflow-hidden group/qr transition-all duration-500 hover:border-blue-500/30">
+                        <!-- Label Overlay -->
+                        <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black text-white uppercase tracking-[0.2em] z-10 shadow-lg shadow-blue-900/50">
+                            {% trans "QR Chuyển khoản" %}
+                        </div>
+
+                        <div class="aspect-square bg-white rounded-[2rem] flex items-center justify-center p-8 transition-transform duration-700 group-hover/qr:scale-95">
+                            {% if qr_code %}
+                            <img src="{{ qr_code }}" 
+                                 alt="Payment QR" 
+                                 class="w-full h-full object-contain block brightness-110 contrast-110" />
+                            {% else %}
+                            <div class="flex flex-col items-center gap-4 text-slate-300">
+                                <i class="fas fa-qrcode text-6xl opacity-20"></i>
+                                <span class="text-xs font-bold uppercase tracking-widest opacity-50">QR Not Available</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 space-y-4">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{% trans "Hướng dẫn gia hạn" %}</p>
+                        <div class="grid grid-cols-1 gap-3 text-left">
+                            <div class="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-black shrink-0">1</span>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    {% trans "Chụp màn hình mã QR ở trên hoặc quét trực tiếp bằng ứng dụng Ngân hàng/Ví điện tử." %}
+                                </p>
+                            </div>
+                            <div class="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-black shrink-0">2</span>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    {% trans "Nhập nội dung chuyển khoản là tên đăng nhập" %}: <span class="text-blue-400 font-black">{{ user_profile.username }}</span>
+                                </p>
+                            </div>
+                            <div class="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-black shrink-0">3</span>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    {% trans "Sau khi chuyển khoản, hệ thống sẽ tự động gia hạn trong giây lát." %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Support Information Footer -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6 px-10">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{% trans "Hỗ trợ 24/7" %}</p>
+                    <p class="text-xs font-bold text-slate-300">support@openvpn.panel</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="#" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 transition-all">
+                    <i class="fab fa-facebook-messenger"></i>
+                </a>
+                <a href="#" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 transition-all">
+                    <i class="fab fa-telegram-plane"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slide-in-from-bottom { from { transform: translateY(1rem); } to { transform: translateY(0); } }
+    .animate-in { animation: fade-in 0.5s ease-out both, slide-in-from-bottom 0.5s ease-out both; }
+    .duration-700 { animation-duration: 700ms; }
+</style>
+{% endblock %}

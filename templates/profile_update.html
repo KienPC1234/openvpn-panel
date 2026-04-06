@@ -61,16 +61,6 @@
         <!-- Form Column -->
         <div class="lg:col-span-8">
             <div class="glass-card rounded-[2.5rem] p-8 md:p-14 relative overflow-hidden shadow-2xl">
-                {% if messages %}
-                <div class="mb-10 space-y-4">
-                    {% for message in messages %}
-                    <div class="flex items-center gap-4 px-6 py-4 rounded-2xl animate-slide-in {% if message.tags == 'success' %}bg-emerald-500/10 border border-emerald-500/20 text-emerald-400{% else %}bg-rose-500/10 border border-rose-500/20 text-rose-400{% endif %}">
-                        <i class="fas {% if message.tags == 'success' %}fa-circle-check{% else %}fa-triangle-exclamation{% endif %} text-lg"></i>
-                        <p class="text-sm font-black uppercase tracking-widest">{{ message }}</p>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
 
                 <form method="post" class="space-y-12">
                     {% csrf_token %}
@@ -122,24 +112,36 @@
                             <h3 class="text-sm font-black text-slate-400 tracking-[0.3em] uppercase">{% trans 'Thay đổi mật khẩu' %}</h3>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-8">
                             <div class="space-y-3">
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1" for="password">{% trans 'Mật khẩu mới' %}</label>
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1" for="old_password">{% trans 'Mật khẩu cũ' %}</label>
                                 <div class="relative group">
                                     <div class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-orange-500 transition-colors">
-                                        <i class="fas fa-key text-xs"></i>
+                                        <i class="fas fa-lock text-xs"></i>
                                     </div>
-                                    <input type="password" id="password" name="password" class="w-full bg-slate-950/40 border border-white/5 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/5 text-white pl-12 pr-6 py-4 rounded-2xl transition-all duration-300 font-bold text-sm placeholder:text-slate-800" placeholder="••••••••">
+                                    <input type="password" id="old_password" name="old_password" class="w-full bg-slate-950/40 border border-white/5 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/5 text-white pl-12 pr-6 py-4 rounded-2xl transition-all duration-300 font-bold text-sm placeholder:text-slate-800" placeholder="••••••••">
                                 </div>
                             </div>
 
-                            <div class="space-y-3">
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1" for="confirm_password">{% trans 'Xác nhận mật khẩu mới' %}</label>
-                                <div class="relative group">
-                                    <div class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-orange-500 transition-colors">
-                                        <i class="fas fa-check-shield text-xs"></i>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="space-y-3">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1" for="password">{% trans 'Mật khẩu mới' %}</label>
+                                    <div class="relative group">
+                                        <div class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-orange-500 transition-colors">
+                                            <i class="fas fa-key text-xs"></i>
+                                        </div>
+                                        <input type="password" id="password" name="password" class="w-full bg-slate-950/40 border border-white/5 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/5 text-white pl-12 pr-6 py-4 rounded-2xl transition-all duration-300 font-bold text-sm placeholder:text-slate-800" placeholder="••••••••">
                                     </div>
-                                    <input type="password" id="confirm_password" name="confirm_password" class="w-full bg-slate-950/40 border border-white/5 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/5 text-white pl-12 pr-6 py-4 rounded-2xl transition-all duration-300 font-bold text-sm placeholder:text-slate-800" placeholder="••••••••">
+                                </div>
+
+                                <div class="space-y-3">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1" for="confirm_password">{% trans 'Xác nhận mật khẩu mới' %}</label>
+                                    <div class="relative group">
+                                        <div class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-orange-500 transition-colors">
+                                            <i class="fas fa-shield-check text-xs"></i>
+                                        </div>
+                                        <input type="password" id="confirm_password" name="confirm_password" class="w-full bg-slate-950/40 border border-white/5 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/5 text-white pl-12 pr-6 py-4 rounded-2xl transition-all duration-300 font-bold text-sm placeholder:text-slate-800" placeholder="••••••••">
+                                    </div>
                                 </div>
                             </div>
                         </div>

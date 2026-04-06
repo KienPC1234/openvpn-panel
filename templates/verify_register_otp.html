@@ -26,7 +26,7 @@
                     </div>
                     <span class="text-white font-bold text-sm">{% trans 'Phần thưởng chờ bạn' %}</span>
                 </div>
-                <p class="text-gray-500 text-sm">{% trans 'Sau khi xác thực thành công, tài khoản sẽ được kích hoạt ngay với' %} <span class="text-green-400 font-bold">{% trans '3 ngày dùng thử MIỄN PHÍ' %}</span>.</p>
+                <p class="text-gray-500 text-sm">{% trans 'Sau khi xác thực thành công, tài khoản sẽ được kích hoạt ngay với' %} <span class="text-green-400 font-bold">{% trans '1 ngày dùng thử MIỄN PHÍ' %}</span>.</p>
             </div>
         </div>
     </div>
@@ -102,12 +102,23 @@
 <script>
 const digits = document.querySelectorAll('.otp-digit');
 const otpValue = document.getElementById('otp-value');
+const form = document.querySelector('form');
 
 function updateOTP() {
     const val = Array.from(digits).map(d => d.value).join('');
     otpValue.value = val;
+    return val;
+}
+
+// Auto-submit only if 6 digits are present
+function tryAutoSubmit() {
+    const val = updateOTP();
     if (val.length === 6) {
-        setTimeout(() => document.getElementById('verify-btn').click(), 100);
+        setTimeout(() => {
+            if (updateOTP().length === 6) {
+                 form.submit();
+            }
+        }, 50);
     }
 }
 
@@ -116,9 +127,13 @@ digits.forEach((d, i) => {
         e.target.value = e.target.value.replace(/\D/g, '');
         if (e.target.value && i < digits.length - 1) digits[i+1].focus();
         updateOTP();
+        tryAutoSubmit();
     });
     d.addEventListener('keydown', e => {
-        if (e.key === 'Backspace' && !e.target.value && i > 0) digits[i-1].focus();
+        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+            digits[i-1].focus();
+            updateOTP();
+        }
     });
     d.addEventListener('paste', e => {
         e.preventDefault();
@@ -126,7 +141,17 @@ digits.forEach((d, i) => {
         pasted.split('').forEach((c, j) => { if (digits[j]) digits[j].value = c; });
         digits[Math.min(pasted.length, 5)].focus();
         updateOTP();
+        tryAutoSubmit();
     });
+});
+
+// Final check before form submission
+form.addEventListener('submit', (e) => {
+    const val = updateOTP();
+    if (val.length !== 6) {
+        e.preventDefault();
+        alert("{% trans 'Vui lòng nhập đủ 6 chữ số mã OTP.' %}");
+    }
 });
 
 // Countdown

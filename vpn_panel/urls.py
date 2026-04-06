@@ -9,6 +9,7 @@ urlpatterns = [
     path('download/otp/', views.OTPDownloadView.as_view(), name='otp_download'),
     path('download/installer/', views.InstallerView.as_view(), name='installer_download'),
     path('admin/generate-otp/<int:pk>/', views.AdminGenerateOTPView.as_view(), name='admin_generate_user_otp'),
+    path('api/admin/generate-otp/<int:pk>/', views.AdminGenerateOTPAPIView.as_view(), name='admin_generate_user_otp_api'),
     path('locked/', views.LockedView.as_view(), name='locked'),
     
     # Captive Portal Detection Endpoints
@@ -34,4 +35,7 @@ urlpatterns = [
     path('admin/users/toggle/<int:pk>/', views.AdminUserToggleLockView.as_view(), name='admin_user_toggle_lock'),
     path('password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
     path('password-reset/verify/', views.PasswordResetVerifyView.as_view(), name='password_reset_verify'),
+    path('users/', views.PublicUserListView.as_view(), name='public_user_list'),
+    path('users/<str:username>/', views.PublicUserDetailView.as_view(), name='public_user_detail'),
+    path('api/payment/webhook/', views.PaymentWebhookView.as_view(), name='payment_webhook'),
 ]

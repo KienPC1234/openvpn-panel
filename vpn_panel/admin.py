@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.conf import settings
 from django.db.models import Sum
-from .models import CustomUser, Client, UsageLog, Setting, TrafficSnapshot, OTPCode, VPNConfig, Subscription, Announcement, TaskLog, TaskControl, SystemLog
+from .models import CustomUser, Client, UsageLog, Setting, TrafficSnapshot, OTPCode, VPNConfig, Subscription, Announcement, TaskLog, TaskControl, SystemLog, InstallerFile, InstallerManager
 from .services import VPNService
 from django.utils import timezone
 from .tasks import send_bulk_announcement, send_welcome_email_task
@@ -101,6 +101,7 @@ def extend_30_days(modeladmin, request, queryset):
             user.expiry_date = timezone.now().date() + timedelta(days=days)
         user.save()
     messages.success(request, f"Đã gia hạn {queryset.count()} người dùng thêm {days} ngày.")
+    return None # Django's admin handles redirect for standard actions
 
 @admin.action(description='Gia hạn VÔ CỰC (999 năm)')
 def set_infinite_expiry(modeladmin, request, queryset):
@@ -108,6 +109,7 @@ def set_infinite_expiry(modeladmin, request, queryset):
     infinite_date = timezone.datetime.strptime(inf_str, '%Y-%m-%d').date()
     queryset.update(expiry_date=infinite_date)
     messages.success(request, f"Đã gán thời gian VÔ CỰC cho {queryset.count()} người dùng.")
+    return None
 
 @admin.action(description='Đồng bộ từ hệ thống (OpenVPN)')
 def sync_users_action(modeladmin, request, queryset):
@@ -194,6 +196,7 @@ class CustomUserAdmin(ModelAdmin):
     def sync_users_action_local(self, request, queryset=None):
         created, skipped = VPNService.sync_system_users()
         messages.success(request, f"Đồng bộ hoàn tất: {created} mới, {skipped} đã tồn tại.")
+        return redirect('admin:vpn_panel_customuser_changelist')
 
     def save_model(self, request, obj, form, change):
         is_new = obj.pk is None
@@ -398,7 +401,7 @@ class CustomUserAdmin(ModelAdmin):
             download_url = reverse('download_ovpn', args=[obj.vpn_client.pk])
             return mark_safe(f'''
                 <div class="flex gap-2">
-                    <a class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 no-underline" href="{otp_url}">🔑 OTP</a>
+                    <a class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 no-underline cursor-pointer" onclick="generateOTP('{reverse('admin_generate_user_otp_api', args=[obj.pk])}', '{obj.username}')">🔑 OTP</a>
                     <a class="px-2 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 no-underline" href="{download_url}">📥 OVPN</a>
                     <a class="px-2 py-1 {lock_btn_color} text-white rounded text-xs no-underline" href="{lock_url}">{lock_btn_text}</a>
                     <a class="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 no-underline" href="{reverse('admin:vpn_password_change', args=[obj.pk])}">🔑 Pass</a>
@@ -454,7 +457,14 @@ class CustomUserAdmin(ModelAdmin):
         
         action_name = "KHÓA" if current_state else "MỞ KHÓA"
         messages.success(request, f"Đã {action_name} thành công tài khoản {user.username}.")
-        return redirect(request.META.get('HTTP_REFERER', 'admin:index'))
+        print(f"DEBUG: Admin action success message added for {user.username}")
+        
+        # Prefer referring page, fallback to changelist, then to index
+        next_url = request.META.get('HTTP_REFERER')
+        if not next_url or 'toggle-lock' in next_url:
+            next_url = reverse('admin:vpn_panel_customuser_changelist')
+            
+        return redirect(next_url)
     def admin_password_change_view(self, request, user_id):
         user = CustomUser.objects.get(pk=user_id)
         if request.method == 'POST':
@@ -762,3 +772,60 @@ class SystemLogAdmin(ModelAdmin):
             'log_contents': log_contents,
         }
         return TemplateResponse(request, "admin/system_logs.html", context)
+
+@admin.register(InstallerFile)
+class InstallerFileAdmin(ModelAdmin):
+    list_display = ('file', 'uploaded_at')
+
+@admin.register(InstallerManager)
+class InstallerManagerAdmin(ModelAdmin):
+    def has_add_permission(self, request): return False
+    def has_delete_permission(self, request, obj=None): return False
+    
+    def changelist_view(self, request, extra_context=None):
+        from .services import VPNService
+        import os
+        from django.core.files.storage import default_storage
+        
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            filename = request.POST.get('filename')
+            
+            if action == 'upload' and request.FILES.get('file'):
+                f = request.FILES['file']
+                # Create DB record (which also saves file via FileField)
+                inst = InstallerFile.objects.create(file=f)
+                messages.success(request, f"Đã tải lên tệp: {inst.file.name}")
+                
+            elif action == 'set_win' and filename:
+                VPNService.set_vpn_setting('INSTALLER_WIN_NAME', filename)
+                messages.success(request, f"Đã đặt {filename} làm bộ cài Windows mặc định.")
+                
+            elif action == 'set_mac' and filename:
+                VPNService.set_vpn_setting('INSTALLER_MAC_NAME', filename)
+                messages.success(request, f"Đã đặt {filename} làm bộ cài macOS mặc định.")
+                
+            elif action == 'set_linux' and filename:
+                VPNService.set_vpn_setting('INSTALLER_LINUX_NAME', filename)
+                messages.success(request, f"Đã đặt {filename} làm bộ cài Linux mặc định.")
+                
+            elif action == 'delete' and filename:
+                # Delete from DB if exists, which also triggers physical deletion via our model override
+                InstallerFile.objects.filter(file__contains=filename).delete()
+                # Manual physical delete as fallback/safety for files without DB record
+                phys_path = settings.BASE_DIR / 'static' / 'openvpn_installer' / filename
+                if phys_path.exists():
+                    os.remove(phys_path)
+                messages.warning(request, f"Đã xóa vĩnh viễn tệp {filename}")
+                
+            return redirect('admin:vpn_panel_installermanager_changelist')
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Quản lý Bộ cài đặt',
+            'files': VPNService.get_available_installers(),
+            'current_win': VPNService.get_vpn_setting('INSTALLER_WIN_NAME'),
+            'current_mac': VPNService.get_vpn_setting('INSTALLER_MAC_NAME'),
+            'current_linux': VPNService.get_vpn_setting('INSTALLER_LINUX_NAME'),
+        }
+        return TemplateResponse(request, "admin/installer_manager.html", context)
